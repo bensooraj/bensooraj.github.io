@@ -1,0 +1,59 @@
+baseURL = "http://bensooraj.com/"
+languageCode = "en-us"
+title = "Ben Sooraj"
+theme = "noteworthy"
+
+paginate = 4 # Set the number of posts to show before overflowing to the next page.
+summaryLength = 10 # Configure how long the post summary should be on the homepage.
+
+[taxonomies]
+  category = "categories"
+  tag = "tags"
+
+[author]
+	name = "bensooraj"
+    homepage = "https://github.com/bensooraj"
+
+# Set to false to disallow raw HTML in markdown files
+[markup.goldmark.renderer]
+    unsafe = true
+
+# Add your Disqus shortname here.
+disqusShortname = "bensoorajm"      
+
+# Set enableKofi to true to enable the Ko-fi support button. Add your Ko-fi ID to link to your account.
+enableKofi = true
+kofi = "bensooraj"
+
+[params]
+
+    math = true
+
+	# Blog description at the top of the homepage. Supports markdown.
+	description = "My journal where I record my learnings and experiments, in both tech and life!"
+  
+    #  Social media accounts | Main
+    linkedin = "https://www.linkedin.com/in/bensoorajm/"
+
+    #  Social media accounts | Programming
+    github = "http://github.com/bensooraj"
+    stackoverflow = "https://stackoverflow.com/users/4350349/bensooraj"
+
+# Menu links along the sidebar navigation.
+[[menu.main]]
+	identifier = "about"
+	name = "About"
+	url = "/about/"
+	weight = 1 # Weight is an integer used to sort the menu items. The sorting goes from smallest to largest numbers. If weight is not defined for each menu entry, Hugo will sort the entries alphabetically.
+
+[[menu.main]]
+	identifier = "tags"
+	name = "Tags"
+	url = "/tags/"
+	weight = 2
+
+# [[menu.main]]
+# 	name = "Archives"
+# 	identifier = "archives"
+# 	url = "/archives/"
+# 	weight = 3
