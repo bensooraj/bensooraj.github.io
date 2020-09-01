@@ -1,4 +1,4 @@
-baseURL = "http://bensooraj.com/"
+baseURL = ""
 languageCode = "en-us"
 title = "Ben Sooraj"
 theme = "noteworthy"
@@ -12,7 +12,7 @@ summaryLength = 10 # Configure how long the post summary should be on the homepa
 
 [author]
 	name = "bensooraj"
-    homepage = "https://github.com/bensooraj"
+    homepage = ""
 
 # Set to false to disallow raw HTML in markdown files
 [markup.goldmark.renderer]
