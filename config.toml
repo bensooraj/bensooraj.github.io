@@ -21,6 +21,9 @@ summaryLength = 10 # Configure how long the post summary should be on the homepa
 # Add your Disqus shortname here.
 disqusShortname = "bensoorajm"      
 
+# Add your Google Analytics identifier: UA-XXXXXXXX-X
+googleAnalytics = "UA-177026573-1"
+
 # Set enableKofi to true to enable the Ko-fi support button. Add your Ko-fi ID to link to your account.
 enableKofi = true
 kofi = "bensooraj"

@@ -179,6 +179,7 @@ You can see that `rect` can access:
 
 I am not sure if that's the correct way to put it, but these are my observations.
 
+
 ---
 
 Note: _This article is not an in-depth tutorial or treatment of Golang's syntax, semantics, design or implementation, but a journal of my learnings._
