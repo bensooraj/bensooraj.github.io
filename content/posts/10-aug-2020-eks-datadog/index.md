@@ -4,7 +4,7 @@ date: 2020-08-10T17:04:32+05:30
 draft: false
 ---
 
-Datadog has been part of our stack for quite sometime now, where the `datadog-agent` installed on our EC2 instances (baked into the image) would tail log files to which the application services would write to.
+Datadog has been part of our stack for quite sometime now, where the `datadog-agent` installed on the EC2 instances (baked into the image) tail log files to which the application services write to.
 
 A recent project required me to send the application logs deployed on kubernetes to Datadog. This required a different approach which I would be sharing today. A few pre-requisites before I begin:
 
