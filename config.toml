@@ -34,7 +34,7 @@ kofi = "bensooraj"
     math = true
 
 	# Blog description at the top of the homepage. Supports markdown.
-	description = "My journal where I record my learnings and experiments, in both tech and life!"
+	description = "My journal where I record some of my learnings and experiments, in both tech and life!"
   
     #  Social media accounts | Main
     linkedin = "https://www.linkedin.com/in/bensoorajm/"

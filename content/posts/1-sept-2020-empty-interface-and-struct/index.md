@@ -1,0 +1,172 @@
+---
+title: "The empty interface and the empty struct in golang"
+date: 2020-09-01T17:04:32+05:30
+draft: false
+---
+
+An `interface` is a collection or set of method declarations. A data type implements or satisfies an `interface` if it at least defines the methods declared by the `interface`.
+
+## Empty interface
+
+An empty interface `interface{}` has zero methods. So, in essence, any data type implements or satisfies an empty interface. Let's take the following example:
+
+```golang
+type Container []interface{}
+
+func (c *Container) Put(elem interface{}) {
+    *c = append(*c, elem)
+    switch elem.(type) {
+    case int:
+        fmt.Println("Put ", elem, " of type int")
+    case string:
+        fmt.Println("Put ", elem, " of type string")
+    default:
+        fmt.Println("Put ", elem, " of type unknown")
+    }
+}
+
+func (c *Container) Pop() interface{} {
+    elem := (*c)[0]
+    *c = (*c)[1:]
+    return elem
+}
+
+func main() {
+    allContainer := &Container{}
+
+    allContainer.Put("Hello")
+    allContainer.Put(213)
+    allContainer.Put(123.321)
+
+    fmt.Printf("allContainer: %+v\n\n", allContainer)
+}
+```
+
+Output:
+
+```sh
+$ go run main.go
+Put  Hello  of type string
+Put  213  of type int
+Put  123.321  of type unknown
+allContainer: &[Hello 213 123.321]
+```
+
+In the above example, the data type `Container` is a slice of empty interfaces with two methods defined on it, `Put()` and `Pop()`. It loosely resembles a _First In, Last Out_ stack.
+
+The `Put()` method takes an `interface{}` as the input argument and appends it to the slice of `interface{}`s. This means that it can accept a string, an integer, a float or any other simple and composite data type as its input argument. You can access the underlying type of `elem`, an `interface{}`, using `elem.(type)`.
+
+This approach does have its disadvantages though. One being that you should implement type assertions, checks or type specific logics to avoid any surprises during runtime.
+
+## Empty struct
+
+To quote the Golang spec:
+
+> A struct is a sequence of named elements, called fields, each of which has a name and a type.
+
+Let's take an example
+
+```golang
+// A struct with 5 fields.
+struct {
+    x, y int
+    u float32
+    A *[]int
+    F func()
+}
+```
+
+An empty struct is a struct data type with zero fields:
+
+```golang
+// Named type
+type EmptyStruct struct{}
+
+// Variable declaration
+var es struct{}
+
+// Or use it directly!
+struct{}{}
+```
+
+The size or width of a `struct` is defined as the sum of its constituent types. An empty `struct`, since it has no fields within it, has a size or width of zero. Zero bytes!
+
+Just like regular structs you can define methods on empty structs as well. Sort of like a zero sized container for methods:
+
+```golang
+type EmptyStruct struct{}
+
+func (es *EmptyStruct) WhoAmI() {
+    fmt.Println("I am an empty struct!")
+}
+```
+
+Empty structs find its best use case in channel signalling. Many a mere mortals such as me have used booleans or integers to notify an event over a channel.
+
+The following example prints the current time at every 500 milliseconds and times out after 3 seconds,
+
+```golang
+func printFor3Seconds(doneChannel chan struct{}) {
+    ticker := time.NewTicker(500 * time.Millisecond)
+    timeout := time.After(3 * time.Second)
+
+    for {
+        select {
+        case t := <-ticker.C:
+            fmt.Printf("Tik tik: %v\n", t)
+        case <-timeout:
+            fmt.Printf("Timeout at: %v\n", time.Now())
+            doneChannel <- struct{}{}
+            return
+        }
+    }
+}
+
+func main() {
+    doneChannel := make(chan struct{}, 1)
+
+    go printFor3Seconds(doneChannel)
+
+    <-doneChannel
+}
+
+// Output
+// $ go run 1.go
+// Tik tik: 2020-09-16 08:25:36.750631 +0530 IST m=+0.501680080
+// Tik tik: 2020-09-16 08:25:37.250303 +0530 IST m=+1.001337269
+// Tik tik: 2020-09-16 08:25:37.750696 +0530 IST m=+1.501714888
+// Tik tik: 2020-09-16 08:25:38.253708 +0530 IST m=+2.004711715
+// Tik tik: 2020-09-16 08:25:38.752804 +0530 IST m=+2.503793180
+// Tik tik: 2020-09-16 08:25:39.251941 +0530 IST m=+3.002914584
+// Timeout at: 2020-09-16 08:25:39.251999 +0530 IST m=+3.002972846
+```
+
+Instead of `doneChannel <- 0` or `doneChannel <- true`, I am using `doneChannel <- struct{}{}` for channel signalling. Using booleans or integers for channel signalling involves memory allocation, copying over the element etc.
+
+We can use empty structs for simulating sets as well,
+
+```golang
+intSet := make(map[int]struct{})
+empty := struct{}{}
+
+// We are setting empty as the value for 1, because the
+// value is meaningless
+intSet[1] = empty
+if _, ok := intSet[1]; ok {
+    fmt.Println("1 is in the set")
+}
+
+// 2 is not one of intSet's keys
+if _, ok := intSet[2]; !ok {
+    fmt.Println("2 is not in the set")
+}
+```
+
+## Resources:
+
+1. [The Go Programming Language Specification](https://golang.org/ref/spec#Struct_types)
+2. [The empty struct - Dave Cheney](https://dave.cheney.net/2014/03/25/the-empty-struct)
+
+---
+
+Note: _This article is not an in-depth tutorial or treatment of Golang's syntax, semantics, design or implementation, but a journal of my learnings._
