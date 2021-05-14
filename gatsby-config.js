@@ -6,7 +6,14 @@ const shouldAnalyseBundle = process.env.ANALYSE_BUNDLE
 
 module.exports = {
   siteMetadata: {
-    siteTitleAlt: `Minimal Blog - Gatsby Theme`,
+    siteTitle: `Ben Sooraj`,
+    siteTitleAlt: `Ben Sooraj`,
+    siteHeadline: `Personal blog`,
+    siteUrl: `https://bensooraj.com`,
+    siteDescription: `Typography driven, feature-rich blogging theme with minimal aesthetics. Includes tags/categories support and extensive features for code blocks such as live preview, line numbers, and line highlighting.`,
+    siteLanguage: `en`,
+    // siteImage: `/banner.jpg`,
+    author: `@bensooraj`,
   },
   plugins: [
     {
@@ -28,10 +35,10 @@ module.exports = {
             name: `Twitter`,
             url: `https://twitter.com/bensooraj`,
           },
-          // {
-          //   name: `Instagram`,
-          //   url: `https://www.instagram.com/lekoarts.de/`,
-          // },
+          {
+            name: `Linkedin`,
+            url: `https://in.linkedin.com/in/bensoorajm`,
+          },
         ],
       },
     },
