@@ -68,3 +68,6 @@ public
 .idea
 .vscode
 .DS_Store
+
+# User defined
+private-notes
