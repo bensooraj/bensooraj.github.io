@@ -8,4 +8,4 @@ clean:
 	gatsby clean
 
 deploy:
-	gatsby build --prefix-paths && gh-pages -d public
+	gatsby build --prefix-paths && gh-pages -d public -b master

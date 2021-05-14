@@ -1,0 +1,5 @@
+This is a Brave Rewards publisher verification file.
+
+Domain: bensooraj.com
+Token: 5e9cec263b19b75fedc4d3cba06612effbaab8e6f0c8884a054ed489ef746f81
+
