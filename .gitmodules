@@ -1,7 +1,0 @@
-[submodule "themes/noteworthy"]
-	path = themes/noteworthy
-	url = https://github.com/kimcc/hugo-theme-noteworthy.git
-[submodule "public"]
-	path = public
-	url = https://github.com/bensooraj/bensooraj.github.io.git
-	branch = master
