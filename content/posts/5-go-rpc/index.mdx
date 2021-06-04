@@ -1,0 +1,160 @@
+---
+title: "Go RPCs (Remote Procedure Calls)"
+date: 2021-05-28T11:04:32+05:30
+draft: false
+tags:
+  - golang
+---
+
+### Introduction
+
+Go's `rpc` package enables communication across multiple machines, sort of like inter-process communication via funtion/method/procedure calls.
+
+As the Go documentation puts it:
+> Package `rpc` provides access to the exported methods of an object across a network or other I/O connection. A server registers an object, making it visible as a service with the name of the type of the object.
+
+The object that is registered with the `rpc` server can be either primitive/builtin data types (`int`, `string` etc.) or user-defined ones (such as `struct`s). I would usually prefer a `struct`.
+
+Under the hood, by default, Go uses `gob` for serializing and deserializing the remote procedure calls. This is configurable, that is, you can plug-in `JSON` or other custom codecs.
+
+### Prerequisites
+
+The methods which define actions on the registered object must adhere to a specific function signature. The methods,
+- and its type(s) must be exported (uppercased)
+- have two arguments, both exported (or builtin) types.
+- their second argument is a pointer.
+- must have one return type, `error`.
+
+Essentially the method signature looks like the following:
+```go
+func (t *T) MethodName(argType T1, replyType *T2) error
+```
+
+### Implementation
+
+Let's look at a dummy blog server and a client interacting with each other via `rpc`.
+##### a. Types
+
+It's a good idea to wrap the object, along with the methods and types, into a package of its own. This makes it easier for both the server and client implementations to agree on common type definitions.
+
+In the following code, `Blog` will be registered with the `rpc` server.
+```go
+type Blog struct {
+	posts      map[int]Post
+	lastPostID int
+	sync.Mutex
+}
+
+type Post struct {
+	ID    int
+	Title string
+	Body  string
+}
+
+// NewBlog is required because, even though Blog is exported its fields are not.
+// The fields are internal to the package.
+func NewBlog() *Blog {
+	return &Blog{
+		posts: make(map[int]Post),
+	}
+}
+```
+The function `NewBlog() *Blog` is necessary since we aren't exporting its fields: `posts` and `lastPostID`.
+
+##### b. Methods
+`Blog` will have two methods: `AddPost` and `GetPostByID`. Notice the function signature.
+```go
+func (b *Blog) AddPost(payload, reply *Post) error {
+	b.Lock()
+	defer b.Unlock()
+
+	if payload.Title == "" || payload.Body == "" {
+		return errors.New("Title and Body must not be empty")
+	}
+
+	b.lastPostID++
+
+	*reply = Post{ID: b.lastPostID, Title: payload.Title, Body: payload.Body}
+	b.posts[reply.ID] = *reply
+
+	return nil
+}
+
+func (b *Blog) GetPostByID(payload int, reply *Post) error {
+	b.Lock()
+	defer b.Unlock()
+
+	*reply = b.posts[payload]
+
+	return nil
+}
+```
+
+Each method takes two arguments, `payload` and `reply` (you can name them anything). It receives the input from the client in the first parameter. The second argument (a pointer) is used for sending a response back to the client.
+
+##### c. Server
+The server implementation is fairly simple:
+```go
+// Fetch an instance of the object
+blog := types.NewBlog()
+
+rpc.Register(blog) // Register the instance with the rpc
+rpc.HandleHTTP() // Configure the rpc to serve over HTTP
+
+err := http.ListenAndServe(":3000", nil)
+if err != nil {
+	log.Fatalln("Error starting the RPC server", err)
+}
+```
+
+##### d. Client
+
+Dial the server using `rpc.DialHTTP`:
+```go
+client, err := rpc.DialHTTP("tcp", ":3000")
+if err != nil {
+	log.Fatalln("Error creating the RPC client", err)
+}
+```
+
+And make the remote procedure calls using `client.Call`. It takes three arguments:
+1. The method name of the form: `<T>.<MethodName>`
+2. Input params
+3. A pointer to receive the response from the server
+```go
+// Create a post
+var post types.Post
+
+// Create posts
+err = client.Call("Blog.AddPost", &types.Post{Title: "post 1", Body: "Hello, world!"}, &post)
+if err != nil {
+	log.Fatalln("Error creating post", err)
+}
+log.Printf("[AddPost] ID: %d | Title: %s | Body: %s\n", post.ID, post.Title, post.Body)
+
+// Fetch a post by ID
+err = client.Call("Blog.GetPostByID", 3, &post)
+if err != nil {
+	log.Fatalln("Error creating post", err)
+}
+log.Printf("[GetPostByID] ID: %d | Title: %s | Body: %s\n", post.ID, post.Title, post.Body)
+```
+
+The entire code can be found on [Github](https://github.com/bensooraj/blog-code-resource-repo/tree/main/borneo).
+
+### Some thoughts
+
+In our implementation, the initial handshake between the `rpc` client and server are negotiated over HTTP. Thereafter, the HTTP server acts like a proxy or a conduit between the two, a concept known as [HTTP tunneling](https://en.wikipedia.org/wiki/HTTP_tunnel). I believe this can be customized.
+
+It can be difficult to standardize (to follow common semantics) RPC implementations. This gap is what projects like `gRPC`, `dRPC` etc. attepmt to solve.
+
+It should be obvious by now that you can register only one object with a given name with the `rpc` server.
+
+Further reading:
+1. [godoc: Package `rpc`](https://golang.org/pkg/net/rpc/)
+2. [gRPC: A high performance, open source universal RPC framework](https://grpc.io/)
+3. [dRPC: A lightweight, drop-in replacement for gRPC](https://github.com/storj/drpc)
+
+---
+
+Note: _This article is not an in-depth tutorial or treatment of Golang's syntax, semantics, design or implementation, but a journal of my learnings._
