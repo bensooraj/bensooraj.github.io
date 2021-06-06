@@ -7,7 +7,10 @@
 <url> <loc>https://bensooraj.com/the-empty-interface-and-the-empty-struct-in-golang</loc> <changefreq>daily</changefreq> <priority>0.7</priority> </url>
 <url> <loc>https://bensooraj.com/sending-application-logs-from-eks-to-datadog</loc> <changefreq>daily</changefreq> <priority>0.7</priority> </url>
 <url> <loc>https://bensooraj.com/struct-aggregation-and-embedding-in-golang</loc> <changefreq>daily</changefreq> <priority>0.7</priority> </url>
+<url> <loc>https://bensooraj.com/up-and-running-with-kafka-on-aws-eks-using-strimzi</loc> <changefreq>daily</changefreq> <priority>0.7</priority> </url>
 <url> <loc>https://bensooraj.com/about</loc> <changefreq>daily</changefreq> <priority>0.7</priority> </url>
 <url> <loc>https://bensooraj.com/tags/architecture</loc> <changefreq>daily</changefreq> <priority>0.7</priority> </url>
+<url> <loc>https://bensooraj.com/tags/aws</loc> <changefreq>daily</changefreq> <priority>0.7</priority> </url>
 <url> <loc>https://bensooraj.com/tags/golang</loc> <changefreq>daily</changefreq> <priority>0.7</priority> </url>
+<url> <loc>https://bensooraj.com/tags/kubernetes</loc> <changefreq>daily</changefreq> <priority>0.7</priority> </url>
 </urlset>
