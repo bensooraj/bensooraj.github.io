@@ -116,6 +116,15 @@
   Link: </component---node-modules-lekoarts-gatsby-theme-minimal-blog-core-src-templates-post-query-tsx-2463f65b120868d2315a.js>; rel=preload; as=script
   Link: </page-data/app-data.json>; rel=preload; as=fetch; crossorigin
   Link: </page-data/accessing-amazon-rds-from-aws-eks/page-data.json>; rel=preload; as=fetch; crossorigin
+/kubernetes-by-example-gke
+  Link: </webpack-runtime-55f2a76a00a71ac3be88.js>; rel=preload; as=script
+  Link: </framework-cd3e1e804d552fa282ef.js>; rel=preload; as=script
+  Link: </app-83334ac165a5a132fa00.js>; rel=preload; as=script
+  Link: </styles-e9d24b1846c7d6eb9685.js>; rel=preload; as=script
+  Link: </aed2e917f30c051bccba91aa15989a75fd0bd633-550e32192ffced72d3f6.js>; rel=preload; as=script
+  Link: </component---node-modules-lekoarts-gatsby-theme-minimal-blog-core-src-templates-post-query-tsx-2463f65b120868d2315a.js>; rel=preload; as=script
+  Link: </page-data/app-data.json>; rel=preload; as=fetch; crossorigin
+  Link: </page-data/kubernetes-by-example-gke/page-data.json>; rel=preload; as=fetch; crossorigin
 /about
   Link: </webpack-runtime-55f2a76a00a71ac3be88.js>; rel=preload; as=script
   Link: </framework-cd3e1e804d552fa282ef.js>; rel=preload; as=script
