@@ -1,0 +1,3 @@
+User-agent: *
+
+sitemap: https://bensooraj.com/sitemap.xml
