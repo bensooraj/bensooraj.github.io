@@ -1,0 +1,130 @@
+<!DOCTYPE html><html lang="en"><head><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.4.0/styles/github-dark.min.css"/><meta charSet="utf-8"/><meta name="viewport" content="width=device-width"/><meta name="next-head-count" content="2"/><link rel="preload" href="./_next/static/css/cd63f2b0468b5f7a.css" as="style"/><link rel="stylesheet" href="./_next/static/css/cd63f2b0468b5f7a.css" data-n-g=""/><noscript data-n-css=""></noscript><script defer="" nomodule="" src="./_next/static/chunks/polyfills-5cd94c89d3acac5f.js"></script><script src="./_next/static/chunks/webpack-ed47cc4bbff8e103.js" defer=""></script><script src="./_next/static/chunks/framework-91d7f78b5b4003c8.js" defer=""></script><script src="./_next/static/chunks/main-7e73d61bce33e887.js" defer=""></script><script src="./_next/static/chunks/pages/_app-e6ebfa373a417a20.js" defer=""></script><script src="./_next/static/chunks/pages/blog/6-go-rpc-b039b3083b818b06.js" defer=""></script><script src="./_next/static/vZF5O8Cp0wJbkUP_UfCYA/_buildManifest.js" defer=""></script><script src="./_next/static/vZF5O8Cp0wJbkUP_UfCYA/_ssgManifest.js" defer=""></script><script src="./_next/static/vZF5O8Cp0wJbkUP_UfCYA/_middlewareManifest.js" defer=""></script></head><body><div id="__next" data-reactroot=""><div><header class="Header_header__VYZ3G"><div class="max-width-container"><h2><a href="/">Ben Sooraj</a></h2><ul><li><a href="/about">About</a></li><li><a href="/blog">Blog</a></li></ul></div></header><main class="max-width-container main"><h1 class="Markdown_postTitle__HEeQS">Go RPCs (Remote Procedure Calls)</h1>
+<h2>Introduction</h2>
+<p>Go&#x27;s <code>rpc</code> package enables communication across multiple machines, sort of like inter-process communication via funtion/method/procedure calls.</p>
+<p>As the Go documentation puts it:</p>
+<blockquote>
+<p>Package <code>rpc</code> provides access to the exported methods of an object across a network or other I/O connection. A server registers an object, making it visible as a service with the name of the type of the object.</p>
+</blockquote>
+<p>The object that is registered with the <code>rpc</code> server can be either primitive/builtin data types (<code>int</code>, <code>string</code> etc.) or user-defined ones (such as <code>struct</code>s). I would usually prefer a <code>struct</code>.</p>
+<p>Under the hood, by default, Go uses <code>gob</code> for serializing and deserializing the remote procedure calls. This is configurable, that is, you can plug-in <code>JSON</code> or other custom codecs.</p>
+<h2>Prerequisites</h2>
+<p>The methods which define actions on the registered object must adhere to a specific function signature. The methods,</p>
+<ul>
+<li>and its type(s) must be exported (uppercased)</li>
+<li>have two arguments, both exported (or builtin) types.</li>
+<li>their second argument is a pointer.</li>
+<li>must have one return type, <code>error</code>.</li>
+</ul>
+<p>Essentially the method signature looks like the following:</p>
+<pre><code class="hljs language-go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(t *T)</span></span> MethodName(argType T1, replyType *T2) <span class="hljs-type">error</span>
+</code></pre>
+<h2>Implementation</h2>
+<p>Let&#x27;s look at a dummy blog server and a client interacting with each other via <code>rpc</code>.</p>
+<h3>a. Types</h3>
+<p>It&#x27;s a good idea to wrap the object, along with the methods and types, into a package of its own. This makes it easier for both the server and client implementations to agree on common type definitions.</p>
+<p>In the following code, <code>Blog</code> will be registered with the <code>rpc</code> server.</p>
+<pre><code class="hljs language-go"><span class="hljs-keyword">type</span> Blog <span class="hljs-keyword">struct</span> {
+	posts      <span class="hljs-keyword">map</span>[<span class="hljs-type">int</span>]Post
+	lastPostID <span class="hljs-type">int</span>
+	sync.Mutex
+}
+
+<span class="hljs-keyword">type</span> Post <span class="hljs-keyword">struct</span> {
+	ID    <span class="hljs-type">int</span>
+	Title <span class="hljs-type">string</span>
+	Body  <span class="hljs-type">string</span>
+}
+
+<span class="hljs-comment">// NewBlog is required because, even though Blog is exported its fields are not.</span>
+<span class="hljs-comment">// The fields are internal to the package.</span>
+<span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">NewBlog</span><span class="hljs-params">()</span></span> *Blog {
+	<span class="hljs-keyword">return</span> &amp;Blog{
+		posts: <span class="hljs-built_in">make</span>(<span class="hljs-keyword">map</span>[<span class="hljs-type">int</span>]Post),
+	}
+}
+</code></pre>
+<p>The function <code>NewBlog() *Blog</code> is necessary since we aren&#x27;t exporting its fields: <code>posts</code> and <code>lastPostID</code>.</p>
+<h3>b. Methods</h3>
+<p><code>Blog</code> will have two methods: <code>AddPost</code> and <code>GetPostByID</code>. Notice the function signature.</p>
+<pre><code class="hljs language-go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(b *Blog)</span></span> AddPost(payload, reply *Post) <span class="hljs-type">error</span> {
+	b.Lock()
+	<span class="hljs-keyword">defer</span> b.Unlock()
+
+	<span class="hljs-keyword">if</span> payload.Title == <span class="hljs-string">&quot;&quot;</span> || payload.Body == <span class="hljs-string">&quot;&quot;</span> {
+		<span class="hljs-keyword">return</span> errors.New(<span class="hljs-string">&quot;Title and Body must not be empty&quot;</span>)
+	}
+
+	b.lastPostID++
+
+	*reply = Post{ID: b.lastPostID, Title: payload.Title, Body: payload.Body}
+	b.posts[reply.ID] = *reply
+
+	<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>
+}
+
+<span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(b *Blog)</span></span> GetPostByID(payload <span class="hljs-type">int</span>, reply *Post) <span class="hljs-type">error</span> {
+	b.Lock()
+	<span class="hljs-keyword">defer</span> b.Unlock()
+
+	*reply = b.posts[payload]
+
+	<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>
+}
+</code></pre>
+<p>Each method takes two arguments, <code>payload</code> and <code>reply</code> (you can name them anything). It receives the input from the client in the first parameter. The second argument (a pointer) is used for sending a response back to the client.</p>
+<h3>c. Server</h3>
+<p>The server implementation is fairly simple:</p>
+<pre><code class="hljs language-go"><span class="hljs-comment">// Fetch an instance of the object</span>
+blog := types.NewBlog()
+
+rpc.Register(blog) <span class="hljs-comment">// Register the instance with the rpc</span>
+rpc.HandleHTTP() <span class="hljs-comment">// Configure the rpc to serve over HTTP</span>
+
+err := http.ListenAndServe(<span class="hljs-string">&quot;:3000&quot;</span>, <span class="hljs-literal">nil</span>)
+<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
+	log.Fatalln(<span class="hljs-string">&quot;Error starting the RPC server&quot;</span>, err)
+}
+</code></pre>
+<h3>d. Client</h3>
+<p>Dial the server using <code>rpc.DialHTTP</code>:</p>
+<pre><code class="hljs language-go">client, err := rpc.DialHTTP(<span class="hljs-string">&quot;tcp&quot;</span>, <span class="hljs-string">&quot;:3000&quot;</span>)
+<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
+	log.Fatalln(<span class="hljs-string">&quot;Error creating the RPC client&quot;</span>, err)
+}
+</code></pre>
+<p>And make the remote procedure calls using <code>client.Call</code>. It takes three arguments:</p>
+<ol>
+<li>The method name of the form: <code>&lt;T&gt;.&lt;MethodName&gt;</code></li>
+<li>Input params</li>
+<li>A pointer to receive the response from the server</li>
+</ol>
+<pre><code class="hljs language-go"><span class="hljs-comment">// Create a post</span>
+<span class="hljs-keyword">var</span> post types.Post
+
+<span class="hljs-comment">// Create posts</span>
+err = client.Call(<span class="hljs-string">&quot;Blog.AddPost&quot;</span>, &amp;types.Post{Title: <span class="hljs-string">&quot;post 1&quot;</span>, Body: <span class="hljs-string">&quot;Hello, world!&quot;</span>}, &amp;post)
+<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
+	log.Fatalln(<span class="hljs-string">&quot;Error creating post&quot;</span>, err)
+}
+log.Printf(<span class="hljs-string">&quot;[AddPost] ID: %d | Title: %s | Body: %s\n&quot;</span>, post.ID, post.Title, post.Body)
+
+<span class="hljs-comment">// Fetch a post by ID</span>
+err = client.Call(<span class="hljs-string">&quot;Blog.GetPostByID&quot;</span>, <span class="hljs-number">3</span>, &amp;post)
+<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
+	log.Fatalln(<span class="hljs-string">&quot;Error creating post&quot;</span>, err)
+}
+log.Printf(<span class="hljs-string">&quot;[GetPostByID] ID: %d | Title: %s | Body: %s\n&quot;</span>, post.ID, post.Title, post.Body)
+</code></pre>
+<p>The entire code can be found on <a href="https://github.com/bensooraj/blog-code-resource-repo/tree/main/borneo" class="Markdown_link__M8PUN">Github</a>.</p>
+<h2>Some thoughts</h2>
+<p>In our implementation, the initial handshake between the <code>rpc</code> client and server are negotiated over HTTP. Thereafter, the HTTP server acts like a proxy or a conduit between the two, a concept known as <a href="https://en.wikipedia.org/wiki/HTTP_tunnel" class="Markdown_link__M8PUN">HTTP tunneling</a>. I believe this can be customized.</p>
+<p>It can be difficult to standardize (to follow common semantics) RPC implementations. This gap is what projects like <code>gRPC</code>, <code>dRPC</code> etc. attepmt to solve.</p>
+<p>It should be obvious by now that you can register only one object with a given name with the <code>rpc</code> server.</p>
+<p>Further reading:</p>
+<ol>
+<li><a href="https://golang.org/pkg/net/rpc/" class="Markdown_link__M8PUN">godoc: Package <code>rpc</code></a></li>
+<li><a href="https://grpc.io/" class="Markdown_link__M8PUN">gRPC: A high performance, open source universal RPC framework</a></li>
+<li><a href="https://github.com/storj/drpc" class="Markdown_link__M8PUN">dRPC: A lightweight, drop-in replacement for gRPC</a></li>
+</ol>
+<hr/>
+<p>Note: <em>This article is not an in-depth tutorial or treatment of Golang&#x27;s syntax, semantics, design or implementation, but a journal of my learnings.</em></p></main></div></div><script id="__NEXT_DATA__" type="application/json">{"props":{"pageProps":{}},"page":"/blog/6-go-rpc","query":{},"buildId":"vZF5O8Cp0wJbkUP_UfCYA","assetPrefix":".","nextExport":true,"autoExport":true,"isFallback":false,"scriptLoader":[]}</script></body></html>

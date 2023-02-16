@@ -1,0 +1,427 @@
+<!DOCTYPE html><html lang="en"><head><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.4.0/styles/github-dark.min.css"/><meta charSet="utf-8"/><meta name="viewport" content="width=device-width"/><meta name="next-head-count" content="2"/><link rel="preload" href="./_next/static/css/cd63f2b0468b5f7a.css" as="style"/><link rel="stylesheet" href="./_next/static/css/cd63f2b0468b5f7a.css" data-n-g=""/><link rel="preload" href="./_next/static/css/9d581defcc99acf1.css" as="style"/><link rel="stylesheet" href="./_next/static/css/9d581defcc99acf1.css" data-n-p=""/><noscript data-n-css=""></noscript><script defer="" nomodule="" src="./_next/static/chunks/polyfills-5cd94c89d3acac5f.js"></script><script src="./_next/static/chunks/webpack-ed47cc4bbff8e103.js" defer=""></script><script src="./_next/static/chunks/framework-91d7f78b5b4003c8.js" defer=""></script><script src="./_next/static/chunks/main-7e73d61bce33e887.js" defer=""></script><script src="./_next/static/chunks/pages/_app-e6ebfa373a417a20.js" defer=""></script><script src="./_next/static/chunks/pages/blog/2-up-and-running-with-kafka-on-aws-eks-using-strimzi-9b01b16ba48bd6ce.js" defer=""></script><script src="./_next/static/vZF5O8Cp0wJbkUP_UfCYA/_buildManifest.js" defer=""></script><script src="./_next/static/vZF5O8Cp0wJbkUP_UfCYA/_ssgManifest.js" defer=""></script><script src="./_next/static/vZF5O8Cp0wJbkUP_UfCYA/_middlewareManifest.js" defer=""></script></head><body><div id="__next" data-reactroot=""><div><header class="Header_header__VYZ3G"><div class="max-width-container"><h2><a href="/">Ben Sooraj</a></h2><ul><li><a href="/about">About</a></li><li><a href="/blog">Blog</a></li></ul></div></header><main class="max-width-container main"><h1 class="Markdown_postTitle__HEeQS">Up And Running With Kafka On AWS EKS Using Strimzi</h1>
+<h2>Contents <a id="contents"></a></h2>
+<ol>
+<li><a href="#configure-the-aws-cli" class="Markdown_link__M8PUN">Configure the AWS CLI</a></li>
+<li><a href="#create-the-eks-cluster" class="Markdown_link__M8PUN">Create the EKS cluster</a></li>
+<li><a href="#enter-k8s" class="Markdown_link__M8PUN">Enter Kubernetes</a></li>
+<li><a href="#install-and-configure-helm" class="Markdown_link__M8PUN">Install and configure Helm</a></li>
+<li><a href="#install-strimzi-kafka-operator" class="Markdown_link__M8PUN">Install the Strimzi Kafka Operator</a></li>
+<li><a href="#deploy-kaka-cluster" class="Markdown_link__M8PUN">Deploying the Kafka cluster</a></li>
+<li><a href="#analysis" class="Markdown_link__M8PUN">Analysis</a></li>
+<li><a href="#create-topics" class="Markdown_link__M8PUN">Create topics</a></li>
+<li><a href="#test-kafka-cluster" class="Markdown_link__M8PUN">Test the Kafka cluster with Node.js clients</a></li>
+<li><a href="#clean-up" class="Markdown_link__M8PUN">Clean up!</a></li>
+</ol>
+<p>Let&#x27;s get right into it, then!</p>
+<p>We will be using <a href="https://eksctl.io/" class="Markdown_link__M8PUN"><code>eksctl</code></a>, the official CLI for Amazon EKS, to spin up our K8s cluster.</p>
+<h2>Configure the AWS CLI <a name="configure-the-aws-cli"></a> <sup><a href="#contents">[back to top ↑]</a></sup></h2>
+<p>Ensure that the AWS CLI is <a href="https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html" class="Markdown_link__M8PUN">configured</a>. To view your configuration:</p>
+<pre><code class="hljs language-go">$ aws configure list
+      Name                    Value             Type    Location
+      ----                    -----             ----    --------
+   profile                &lt;not set&gt;             None    None
+access_key     ****************<span class="hljs-number">7</span>ONG shared-credentials-file    
+secret_key     ****************lbQg shared-credentials-file    
+    region               ap-south<span class="hljs-number">-1</span>      config-file    ~/.aws/config
+</code></pre>
+<p>Note: The aws CLI config and credentials details are usually stored at <code>~/.aws/config</code> and <code>~/.aws/credentials</code> respectively.</p>
+<h2>Create the EKS cluster <a name="create-the-eks-cluster"></a> <sup><a href="#contents">[back to top ↑]</a></sup></h2>
+<pre><code class="hljs language-arduino">
+$ eksctl create cluster --name=kafka-eks-cluster --nodes=<span class="hljs-number">4</span> --region=ap-south<span class="hljs-number">-1</span>
+
+[ℹ]  <span class="hljs-keyword">using</span> region ap-south<span class="hljs-number">-1</span>
+[ℹ]  setting availability zones to [ap-south<span class="hljs-number">-1b</span> ap-south<span class="hljs-number">-1</span>a ap-south<span class="hljs-number">-1</span>c]
+[ℹ]  subnets <span class="hljs-keyword">for</span> ap-south<span class="hljs-number">-1b</span> - <span class="hljs-keyword">public</span>:<span class="hljs-number">192.168</span><span class="hljs-number">.0</span><span class="hljs-number">.0</span>/<span class="hljs-number">19</span> <span class="hljs-keyword">private</span>:<span class="hljs-number">192.168</span><span class="hljs-number">.96</span><span class="hljs-number">.0</span>/<span class="hljs-number">19</span>
+[ℹ]  subnets <span class="hljs-keyword">for</span> ap-south<span class="hljs-number">-1</span>a - <span class="hljs-keyword">public</span>:<span class="hljs-number">192.168</span><span class="hljs-number">.32</span><span class="hljs-number">.0</span>/<span class="hljs-number">19</span> <span class="hljs-keyword">private</span>:<span class="hljs-number">192.168</span><span class="hljs-number">.128</span><span class="hljs-number">.0</span>/<span class="hljs-number">19</span>
+[ℹ]  subnets <span class="hljs-keyword">for</span> ap-south<span class="hljs-number">-1</span>c - <span class="hljs-keyword">public</span>:<span class="hljs-number">192.168</span><span class="hljs-number">.64</span><span class="hljs-number">.0</span>/<span class="hljs-number">19</span> <span class="hljs-keyword">private</span>:<span class="hljs-number">192.168</span><span class="hljs-number">.160</span><span class="hljs-number">.0</span>/<span class="hljs-number">19</span>
+[ℹ]  nodegroup <span class="hljs-string">&quot;ng-9f3cbfc7&quot;</span> will use <span class="hljs-string">&quot;ami-09c3eb35bb3be46a4&quot;</span> [AmazonLinux2/<span class="hljs-number">1.12</span>]
+[ℹ]  creating EKS cluster <span class="hljs-string">&quot;kafka-eks-cluster&quot;</span> in <span class="hljs-string">&quot;ap-south-1&quot;</span> region
+[ℹ]  will create <span class="hljs-number">2</span> separate CloudFormation stacks <span class="hljs-keyword">for</span> cluster itself <span class="hljs-keyword">and</span> the initial nodegroup
+[ℹ]  <span class="hljs-keyword">if</span> you encounter any issues, check CloudFormation console <span class="hljs-keyword">or</span> <span class="hljs-keyword">try</span> <span class="hljs-string">&#x27;eksctl utils describe-stacks --region=ap-south-1 --name=kafka-eks-cluster&#x27;</span>
+[ℹ]  <span class="hljs-number">2</span> sequential tasks: { create cluster control plane <span class="hljs-string">&quot;kafka-eks-cluster&quot;</span>, create nodegroup <span class="hljs-string">&quot;ng-9f3cbfc7&quot;</span> }
+[ℹ]  building cluster stack <span class="hljs-string">&quot;eksctl-kafka-eks-cluster-cluster&quot;</span>
+[ℹ]  deploying stack <span class="hljs-string">&quot;eksctl-kafka-eks-cluster-cluster&quot;</span>
+[ℹ]  building nodegroup stack <span class="hljs-string">&quot;eksctl-kafka-eks-cluster-nodegroup-ng-9f3cbfc7&quot;</span>
+[ℹ]  --nodes-min=<span class="hljs-number">4</span> was set automatically <span class="hljs-keyword">for</span> nodegroup ng<span class="hljs-number">-9f</span>3cbfc7
+[ℹ]  --nodes-max=<span class="hljs-number">4</span> was set automatically <span class="hljs-keyword">for</span> nodegroup ng<span class="hljs-number">-9f</span>3cbfc7
+[ℹ]  deploying stack <span class="hljs-string">&quot;eksctl-kafka-eks-cluster-nodegroup-ng-9f3cbfc7&quot;</span>
+[✔]  all EKS cluster resource <span class="hljs-keyword">for</span> <span class="hljs-string">&quot;kafka-eks-cluster&quot;</span> had been created
+[✔]  saved kubeconfig as <span class="hljs-string">&quot;/Users/Bensooraj/.kube/config&quot;</span>
+[ℹ]  adding role <span class="hljs-string">&quot;arn:aws:iam::account_numer:role/eksctl-kafka-eks-cluster-nodegrou-NodeInstanceRole-IG63RKPE03YQ&quot;</span> to auth ConfigMap
+[ℹ]  nodegroup <span class="hljs-string">&quot;ng-9f3cbfc7&quot;</span> has <span class="hljs-number">0</span> <span class="hljs-built_in">node</span>(s)
+[ℹ]  waiting <span class="hljs-keyword">for</span> at least <span class="hljs-number">4</span> <span class="hljs-built_in">node</span>(s) to become ready in <span class="hljs-string">&quot;ng-9f3cbfc7&quot;</span>
+[ℹ]  nodegroup <span class="hljs-string">&quot;ng-9f3cbfc7&quot;</span> has <span class="hljs-number">4</span> <span class="hljs-built_in">node</span>(s)
+[ℹ]  node <span class="hljs-string">&quot;ip-192-168-25-34.ap-south-1.compute.internal&quot;</span> is ready
+[ℹ]  node <span class="hljs-string">&quot;ip-192-168-50-249.ap-south-1.compute.internal&quot;</span> is ready
+[ℹ]  node <span class="hljs-string">&quot;ip-192-168-62-231.ap-south-1.compute.internal&quot;</span> is ready
+[ℹ]  node <span class="hljs-string">&quot;ip-192-168-69-95.ap-south-1.compute.internal&quot;</span> is ready
+[ℹ]  kubectl command should work with <span class="hljs-string">&quot;/Users/Bensooraj/.kube/config&quot;</span>, <span class="hljs-keyword">try</span> <span class="hljs-string">&#x27;kubectl get nodes&#x27;</span>
+[✔]  EKS cluster <span class="hljs-string">&quot;kafka-eks-cluster&quot;</span> in <span class="hljs-string">&quot;ap-south-1&quot;</span> region is ready
+
+</code></pre>
+<p>A k8s cluster by the name <strong>kafka-eks-cluster</strong> will be created with 4 nodes (instance type: <a href="https://aws.amazon.com/ec2/instance-types/" class="Markdown_link__M8PUN">m5.large</a>) in the Mumbai region (ap-south-1). You can view these in the AWS Console UI as well,</p>
+<p>EKS:</p>
+<img class="MDImage_carousel__N8hEe" src="/2/1_xamksw0rnxsxjohb8zkh.png" alt="AWS EKS UI" width="100%" height="100%"/>
+<p>CloudFormation UI:</p>
+<img class="MDImage_carousel__N8hEe" src="/2/2_8gj6kw97f6bxkm6u9a44.png" alt="Cloudformation UI" width="100%" height="100%"/>
+<p>Also, after the cluster is created, the appropriate kubernetes configuration will be added to your kubeconfig file (defaults to <code>~/.kube/config</code>). The path to the kubeconfig file can be overridden using the <code>--kubeconfig</code> flag.</p>
+<h2>Enter Kubernetes <a name="enter-k8s"></a> <sup><a href="#contents">[back to top ↑]</a></sup></h2>
+<p>Fetching all k8s controllers lists the default <code>kubernetes</code> service. This confirms that <code>kubectl</code> is properly configured to point to the cluster that we just created.</p>
+<pre><code class="hljs language-sh">$ kubectl get all
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.100.0.1   &lt;none&gt;        443/TCP   19m
+</code></pre>
+<h2>Install and configure Helm <a name="install-and-configure-helm"></a> <sup><a href="#contents">[back to top ↑]</a></sup></h2>
+<blockquote>
+<p><a href="https://helm.sh" class="Markdown_link__M8PUN">Helm</a> is a package manager and application management tool for Kubernetes that packages multiple Kubernetes resources into a single logical deployment unit called Chart.</p>
+</blockquote>
+<p>I use <em>Homebrew</em>, so the installation was pretty straightforward: <code>brew install kubernetes-helm</code>.</p>
+<p>Alternatively, to install <code>helm</code>, run the following:</p>
+<pre><code class="hljs language-sh">$ <span class="hljs-built_in">cd</span> ~/eks-kafka-strimzi
+
+$ curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get &gt; get_helm.sh
+
+$ <span class="hljs-built_in">chmod</span> +x get_helm.sh
+
+$ ./get_helm.sh
+</code></pre>
+<p>Read through their <a href="https://helm.sh/docs/using_helm/#installing-helm" class="Markdown_link__M8PUN">installation guide</a>, if you are looking for more options.</p>
+<p><strong>Do not run <code>helm init</code> yet.</strong></p>
+<p><code>Helm</code> relies on a service called <strong><code>tiller</code></strong> that requires special permission on the kubernetes cluster, so we need to build a <strong><code>Service Account</code></strong> (RBAC access) for <strong><code>tiller</code></strong> to use.</p>
+<p>The <code>rbac.yaml</code> file would look like the following:</p>
+<pre><code class="hljs language-yaml"><span class="hljs-meta">---</span>
+<span class="hljs-attr">apiVersion:</span> <span class="hljs-string">v1</span>
+<span class="hljs-attr">kind:</span> <span class="hljs-string">ServiceAccount</span>
+<span class="hljs-attr">metadata:</span>
+  <span class="hljs-attr">name:</span> <span class="hljs-string">tiller</span>
+  <span class="hljs-attr">namespace:</span> <span class="hljs-string">kube-system</span>
+<span class="hljs-meta">---</span>
+<span class="hljs-attr">apiVersion:</span> <span class="hljs-string">rbac.authorization.k8s.io/v1beta1</span>
+<span class="hljs-attr">kind:</span> <span class="hljs-string">ClusterRoleBinding</span>
+<span class="hljs-attr">metadata:</span>
+  <span class="hljs-attr">name:</span> <span class="hljs-string">tiller</span>
+<span class="hljs-attr">roleRef:</span>
+  <span class="hljs-attr">apiGroup:</span> <span class="hljs-string">rbac.authorization.k8s.io</span>
+  <span class="hljs-attr">kind:</span> <span class="hljs-string">ClusterRole</span>
+  <span class="hljs-attr">name:</span> <span class="hljs-string">cluster-admin</span>
+<span class="hljs-attr">subjects:</span>
+  <span class="hljs-bullet">-</span> <span class="hljs-attr">kind:</span> <span class="hljs-string">ServiceAccount</span>
+    <span class="hljs-attr">name:</span> <span class="hljs-string">tiller</span>
+    <span class="hljs-attr">namespace:</span> <span class="hljs-string">kube-system</span>
+</code></pre>
+<p>Apply this to the <code>kafka-eks-cluster</code> cluster:</p>
+<pre><code class="hljs language-sh">$ kubectl apply -f rbac.yaml
+serviceaccount/tiller created
+clusterrolebinding.rbac.authorization.k8s.io/tiller created
+
+<span class="hljs-comment"># Verify (listing only the relevant ones)</span>
+$ kubectl get sa,clusterrolebindings --namespace=kube-system
+NAME                        SECRETS   AGE
+.
+serviceaccount/tiller       1         5m22s
+.
+
+NAME                                                                                                AGE
+.
+clusterrolebinding.rbac.authorization.k8s.io/tiller                                                 5m23s
+.
+</code></pre>
+<p>Now, run <strong><code>helm init</code></strong> using the service account we setup. This will install tiller into the cluster which gives it access to manage resources in your cluster.</p>
+<pre><code class="hljs language-sh">$ helm init --service-account=tiller
+
+<span class="hljs-variable">$HELM_HOME</span> has been configured at /Users/Bensooraj/.helm.
+
+Tiller (the Helm server-side component) has been installed into your Kubernetes Cluster.
+
+Please note: by default, Tiller is deployed with an insecure <span class="hljs-string">&#x27;allow unauthenticated users&#x27;</span> policy.
+
+To prevent this, run `helm init` with the --tiller-tls-verify flag.
+
+For more information on securing your installation see: https://docs.helm.sh/using_helm/<span class="hljs-comment">#securing-your-helm-installation</span>
+</code></pre>
+<h2>Install the Strimzi Kafka Operator <a name="install-strimzi-kafka-operator"></a> <sup><a href="#contents">[back to top ↑]</a></sup></h2>
+<p>Add the Strimzi repository and install the Strimzi Helm Chart:</p>
+<pre><code class="hljs language-sh"><span class="hljs-comment"># Add the repo</span>
+$ helm repo add strimzi http://strimzi.io/charts/
+<span class="hljs-string">&quot;strimzi&quot;</span> has been added to your repositories
+
+<span class="hljs-comment"># Search for all Strimzi  charts</span>
+$ helm search strim
+NAME                          	CHART VERSION	APP VERSION	DESCRIPTION                
+strimzi/strimzi-kafka-operator	0.14.0       	0.14.0     	Strimzi: Kafka as a Service
+
+<span class="hljs-comment"># Install the kafka operator</span>
+$ helm install strimzi/strimzi-kafka-operator
+NAME:   bulging-gnat
+LAST DEPLOYED: Wed Oct  2 15:23:45 2019
+NAMESPACE: default
+STATUS: DEPLOYED
+
+RESOURCES:
+==&gt; v1/ClusterRole
+NAME                                 AGE
+strimzi-cluster-operator-global      0s
+strimzi-cluster-operator-namespaced  0s
+strimzi-entity-operator              0s
+strimzi-kafka-broker                 0s
+strimzi-topic-operator               0s
+
+==&gt; v1/ClusterRoleBinding
+NAME                                              AGE
+strimzi-cluster-operator                          0s
+strimzi-cluster-operator-kafka-broker-delegation  0s
+
+==&gt; v1/Deployment
+NAME                      READY  UP-TO-DATE  AVAILABLE  AGE
+strimzi-cluster-operator  0/1    1           0          0s
+
+==&gt; v1/Pod(related)
+NAME                                       READY  STATUS             RESTARTS  AGE
+strimzi-cluster-operator-6667fbc5f8-cqvdv  0/1    ContainerCreating  0         0s
+
+==&gt; v1/RoleBinding
+NAME                                                 AGE
+strimzi-cluster-operator                             0s
+strimzi-cluster-operator-entity-operator-delegation  0s
+strimzi-cluster-operator-topic-operator-delegation   0s
+
+==&gt; v1/ServiceAccount
+NAME                      SECRETS  AGE
+strimzi-cluster-operator  1        0s
+
+==&gt; v1beta1/CustomResourceDefinition
+NAME                                AGE
+kafkabridges.kafka.strimzi.io       0s
+kafkaconnects.kafka.strimzi.io      0s
+kafkaconnects2is.kafka.strimzi.io   0s
+kafkamirrormakers.kafka.strimzi.io  0s
+kafkas.kafka.strimzi.io             1s
+kafkatopics.kafka.strimzi.io        1s
+kafkausers.kafka.strimzi.io         1s
+
+NOTES:
+Thank you <span class="hljs-keyword">for</span> installing strimzi-kafka-operator-0.14.0
+
+To create a Kafka cluster refer to the following documentation.
+
+https://strimzi.io/docs/0.14.0/<span class="hljs-comment">#kafka-cluster-str</span>
+</code></pre>
+<p>List all the kubernetes objects created again:</p>
+<pre><code class="hljs language-sh">$ kubectl get all
+NAME                                            READY   STATUS    RESTARTS   AGE
+pod/strimzi-cluster-operator-6667fbc5f8-cqvdv   1/1     Running   0          9m25s
+
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.100.0.1   &lt;none&gt;        443/TCP   90m
+
+NAME                                       DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/strimzi-cluster-operator   1         1         1            1           9m25s
+
+NAME                                                  DESIRED   CURRENT   READY   AGE
+replicaset.apps/strimzi-cluster-operator-6667fbc5f8   1         1         1       9m26s
+</code></pre>
+<h2>Deploying the Kafka cluster <a name="deploy-kaka-cluster"></a> <sup><a href="#contents">[back to top ↑]</a></sup></h2>
+<p>We will now create a Kafka cluster with 3 brokers. The YAML file (<code>kafka-cluster.Kafka.yaml</code>) for creating the Kafka cluster would like the following:</p>
+<pre><code class="hljs language-yaml"><span class="hljs-attr">apiVersion:</span> <span class="hljs-string">kafka.strimzi.io/v1beta1</span>
+<span class="hljs-attr">kind:</span> <span class="hljs-string">Kafka</span>
+<span class="hljs-attr">metadata:</span>
+  <span class="hljs-attr">name:</span> <span class="hljs-string">kafka-cluster</span>
+<span class="hljs-attr">spec:</span>
+  <span class="hljs-attr">kafka:</span>
+    <span class="hljs-attr">version:</span> <span class="hljs-number">2.3</span><span class="hljs-number">.0</span> <span class="hljs-comment"># Kafka version</span>
+    <span class="hljs-attr">replicas:</span> <span class="hljs-number">3</span> <span class="hljs-comment"># Replicas specifies the number of broker nodes.</span>
+    <span class="hljs-attr">listeners:</span> <span class="hljs-comment"># Listeners configure how clients connect to the Kafka cluster</span>
+      <span class="hljs-attr">plain:</span> {} <span class="hljs-comment"># 9092</span>
+      <span class="hljs-attr">tls:</span> {} <span class="hljs-comment"># 9093</span>
+    <span class="hljs-attr">config:</span>
+      <span class="hljs-attr">offsets.topic.replication.factor:</span> <span class="hljs-number">3</span>
+      <span class="hljs-attr">transaction.state.log.replication.factor:</span> <span class="hljs-number">3</span>
+      <span class="hljs-attr">transaction.state.log.min.isr:</span> <span class="hljs-number">2</span>
+      <span class="hljs-attr">log.message.format.version:</span> <span class="hljs-string">&quot;2.3&quot;</span>
+      <span class="hljs-attr">delete.topic.enable:</span> <span class="hljs-string">&quot;true&quot;</span>
+    <span class="hljs-attr">storage:</span>
+      <span class="hljs-attr">type:</span> <span class="hljs-string">persistent-claim</span>
+      <span class="hljs-attr">size:</span> <span class="hljs-string">10Gi</span>
+      <span class="hljs-attr">deleteClaim:</span> <span class="hljs-literal">false</span>
+  <span class="hljs-attr">zookeeper:</span>
+    <span class="hljs-attr">replicas:</span> <span class="hljs-number">3</span>
+    <span class="hljs-attr">storage:</span>
+      <span class="hljs-attr">type:</span> <span class="hljs-string">persistent-claim</span> <span class="hljs-comment"># Persistent storage backed by AWS EBS</span>
+      <span class="hljs-attr">size:</span> <span class="hljs-string">10Gi</span>
+      <span class="hljs-attr">deleteClaim:</span> <span class="hljs-literal">false</span>
+  <span class="hljs-attr">entityOperator:</span>
+    <span class="hljs-attr">topicOperator:</span> {} <span class="hljs-comment"># Operator for topic administration</span>
+    <span class="hljs-attr">userOperator:</span> {}
+
+</code></pre>
+<p>Apply the above YAML file:</p>
+<pre><code class="hljs language-sh">$ kubectl apply -f kafka-cluster.Kafka.yaml
+</code></pre>
+<h2>Analysis <a name="analysis"></a> <sup><a href="#contents">[back to top ↑]</a></sup></h2>
+<p>This is where things get interesting. We will now analyse <strong>some</strong> of the k8s resources which the <code>strimzi kafka operator</code> has created for us under the hood.</p>
+<pre><code class="hljs language-sh">$ kubectl get statefulsets.apps,pod,deployments,svc
+NAME                                       DESIRED   CURRENT   AGE
+statefulset.apps/kafka-cluster-kafka       3         3         78m
+statefulset.apps/kafka-cluster-zookeeper   3         3         79m
+
+NAME                                                 READY   STATUS    RESTARTS   AGE
+pod/kafka-cluster-entity-operator-54cb77fd9d-9zbcx   3/3     Running   0          77m
+pod/kafka-cluster-kafka-0                            2/2     Running   0          78m
+pod/kafka-cluster-kafka-1                            2/2     Running   0          78m
+pod/kafka-cluster-kafka-2                            2/2     Running   0          78m
+pod/kafka-cluster-zookeeper-0                        2/2     Running   0          79m
+pod/kafka-cluster-zookeeper-1                        2/2     Running   0          79m
+pod/kafka-cluster-zookeeper-2                        2/2     Running   0          79m
+pod/strimzi-cluster-operator-6667fbc5f8-cqvdv        1/1     Running   0          172m
+
+NAME                                                  DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
+deployment.extensions/kafka-cluster-entity-operator   1         1         1            1           77m
+deployment.extensions/strimzi-cluster-operator        1         1         1            1           172m
+
+NAME                                     TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE
+service/kafka-cluster-kafka-bootstrap    ClusterIP   10.100.177.177   &lt;none&gt;        9091/TCP,9092/TCP,9093/TCP   78m
+service/kafka-cluster-kafka-brokers      ClusterIP   None             &lt;none&gt;        9091/TCP,9092/TCP,9093/TCP   78m
+service/kafka-cluster-zookeeper-client   ClusterIP   10.100.199.128   &lt;none&gt;        2181/TCP                     79m
+service/kafka-cluster-zookeeper-nodes    ClusterIP   None             &lt;none&gt;        2181/TCP,2888/TCP,3888/TCP   79m
+service/kubernetes                       ClusterIP   10.100.0.1       &lt;none&gt;        443/TCP                      4h13m
+</code></pre>
+<p>Points to note:</p>
+<ol>
+<li>The StatefulSet <code>kafka-cluster-zookeeper</code> has created 3 pods - <code>kafka-cluster-zookeeper-0</code>, <code>kafka-cluster-zookeeper-1</code> and <code>kafka-cluster-zookeeper-2</code>. The headless service <code>kafka-cluster-zookeeper-nodes</code> facilitates network identity of these 3 pods (the 3 Zookeeper nodes).</li>
+<li>The StatefulSet <code>kafka-cluster-kafka</code> has created 3 pods - <code>kafka-cluster-kafka-0</code>, <code>kafka-cluster-kafka-1</code> and <code>kafka-cluster-kafka-2</code>. The headless service <code>kafka-cluster-kafka-brokers</code> facilitates network identity of these 3 pods (the 3 Kafka brokers).</li>
+</ol>
+<p>Persistent volumes are dynamically provisioned:</p>
+<pre><code class="hljs language-sh">$ kubectl get pv,pvc
+NAME                                                        CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                                    STORAGECLASS   REASON   AGE
+persistentvolume/pvc-7ff2909f-e507-11e9-91df-0a1e73fdd786   10Gi       RWO            Delete           Bound    default/data-kafka-cluster-zookeeper-1   gp2                     11h
+persistentvolume/pvc-7ff290c4-e507-11e9-91df-0a1e73fdd786   10Gi       RWO            Delete           Bound    default/data-kafka-cluster-zookeeper-2   gp2                     11h
+persistentvolume/pvc-7ffd1d22-e507-11e9-a775-029ce0835b96   10Gi       RWO            Delete           Bound    default/data-kafka-cluster-zookeeper-0   gp2                     11h
+persistentvolume/pvc-a5997b77-e507-11e9-91df-0a1e73fdd786   10Gi       RWO            Delete           Bound    default/data-kafka-cluster-kafka-0       gp2                     11h
+persistentvolume/pvc-a599e52b-e507-11e9-91df-0a1e73fdd786   10Gi       RWO            Delete           Bound    default/data-kafka-cluster-kafka-1       gp2                     11h
+persistentvolume/pvc-a59c6cd2-e507-11e9-91df-0a1e73fdd786   10Gi       RWO            Delete           Bound    default/data-kafka-cluster-kafka-2       gp2                     11h
+
+NAME                                                   STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+persistentvolumeclaim/data-kafka-cluster-kafka-0       Bound    pvc-a5997b77-e507-11e9-91df-0a1e73fdd786   10Gi       RWO            gp2            11h
+persistentvolumeclaim/data-kafka-cluster-kafka-1       Bound    pvc-a599e52b-e507-11e9-91df-0a1e73fdd786   10Gi       RWO            gp2            11h
+persistentvolumeclaim/data-kafka-cluster-kafka-2       Bound    pvc-a59c6cd2-e507-11e9-91df-0a1e73fdd786   10Gi       RWO            gp2            11h
+persistentvolumeclaim/data-kafka-cluster-zookeeper-0   Bound    pvc-7ffd1d22-e507-11e9-a775-029ce0835b96   10Gi       RWO            gp2            11h
+persistentvolumeclaim/data-kafka-cluster-zookeeper-1   Bound    pvc-7ff2909f-e507-11e9-91df-0a1e73fdd786   10Gi       RWO            gp2            11h
+persistentvolumeclaim/data-kafka-cluster-zookeeper-2   Bound    pvc-7ff290c4-e507-11e9-91df-0a1e73fdd786   10Gi       RWO            gp2            11h
+</code></pre>
+<p>You can view the provisioned AWS EBS volumes in the UI as well:</p>
+<img class="MDImage_carousel__N8hEe" src="/2/3_zys2wmubcb42glzzp23m.png" alt="EBS UI" width="100%" height="100%"/>
+<h2>Create topics <a name="create-topics"></a> <sup><a href="#contents">[back to top ↑]</a></sup></h2>
+<p>Before we get started with clients we need to create a <strong>topic</strong> (with 3 partitions and a replication factor of 3), over which our <code>producer</code> and the <code>consumer</code> and produce messages and consume messages on respectively.</p>
+<pre><code class="hljs language-yaml"><span class="hljs-attr">apiVersion:</span> <span class="hljs-string">kafka.strimzi.io/v1beta1</span>
+<span class="hljs-attr">kind:</span> <span class="hljs-string">KafkaTopic</span>
+<span class="hljs-attr">metadata:</span>
+  <span class="hljs-attr">name:</span> <span class="hljs-string">test-topic</span>
+  <span class="hljs-attr">labels:</span>
+    <span class="hljs-attr">strimzi.io/cluster:</span> <span class="hljs-string">kafka-cluster</span>
+<span class="hljs-attr">spec:</span>
+  <span class="hljs-attr">partitions:</span> <span class="hljs-number">3</span>
+  <span class="hljs-attr">replicas:</span> <span class="hljs-number">3</span>
+</code></pre>
+<p>Apply the YAML to the k8s cluster:</p>
+<pre><code class="hljs language-sh">$ kubectl apply -f create-topics.yaml
+kafkatopic.kafka.strimzi.io/test-topic created
+</code></pre>
+<h2>Test the Kafka cluster with Node.js clients <a name="test-kafka-cluster"></a> <sup><a href="#contents">[back to top ↑]</a></sup></h2>
+<p>The multi-broker Kafka cluster that we deployed is backed by <code>statefulset</code>s and their corresponding headless <code>service</code>s.</p>
+<p>Since each Pod (Kafka broker) now has a network identity, clients can connect to the Kafka brokers via a combination of the pod name and service name: <code>$(podname).$(governing service domain)</code>. In our case, these would be the following URLs:</p>
+<ol>
+<li><code>kafka-cluster-kafka-0.kafka-cluster-kafka-brokers</code></li>
+<li><code>kafka-cluster-kafka-1.kafka-cluster-kafka-brokers</code></li>
+<li><code>kafka-cluster-kafka-2.kafka-cluster-kafka-brokers</code></li>
+</ol>
+<p><strong>Note</strong>:</p>
+<ol>
+<li>If the Kafka cluster is deployed in a different namespace, you will have to expand it a little further: <code>$(podname).$(service name).$(namespace).svc.cluster.local</code>.</li>
+<li>Alternatively, the clients can connect to the Kafka cluster using the Service <code>kafka-cluster-kafka-bootstrap:9092</code> as well. It distributes the connection over the three broker specific endpoints I have listed above. As I no longer keep track of the individual broker endpoints, this method plays out well when I have to scale up or down the number of brokers in the Kafka cluster.</li>
+</ol>
+<p>First, clone this repo: <a href="https://github.com/bensooraj/strimzi-kafka-aws-eks" class="Markdown_link__M8PUN">strimzi-kafka-aws-eks</a></p>
+<pre><code class="hljs language-sh"><span class="hljs-comment"># Create the configmap, which contains details such as the broker DNS names, topic name and consumer group ID</span>
+$ kubectl apply -f <span class="hljs-built_in">test</span>/k8s/config.yaml
+configmap/kafka-client-config created
+
+<span class="hljs-comment"># Create the producer deployment</span>
+$ kubectl apply -f <span class="hljs-built_in">test</span>/k8s/producer.Deployment.yaml
+deployment.apps/node-test-producer created
+
+<span class="hljs-comment"># Expose the producer deployment via a service of type LoadBalancer (backed by the AWS Elastic Load Balancer). This just makes it easy for me to curl from postman</span>
+$ kubectl apply -f <span class="hljs-built_in">test</span>/k8s/producer.Service.yaml
+service/node-test-producer created
+
+<span class="hljs-comment"># Finally, create the consumer deployment</span>
+$ kubectl apply -f <span class="hljs-built_in">test</span>/k8s/consumer.Deployment.yaml
+deployment.apps/node-test-consumer created
+
+</code></pre>
+<p>If you list the producer service that we created, you would notice a <code>URL</code> under EXTERNAL-IP:</p>
+<pre><code class="hljs language-sh">$ kubectl get svc
+NAME                             TYPE           CLUSTER-IP       EXTERNAL-IP                                                                PORT(S)                      AGE
+.
+.
+node-test-producer               LoadBalancer   10.100.145.203   ac5f3d0d1e55a11e9a775029ce0835b9-2040242746.ap-south-1.elb.amazonaws.com   80:31231/TCP                 55m
+
+</code></pre>
+<p>The URL <code>ac5f3d0d1e55a11e9a775029ce0835b9-2040242746.ap-south-1.elb.amazonaws.com</code> is an <code>AWS ELB</code> backed public endpoint which we will be querying for producing messages to the Kafka cluster.</p>
+<p>Also, you can see that there is 1 producer and 3 consumers (one for each partition of the topic <code>test-topic</code>):</p>
+<pre><code class="hljs language-sh">$ kubectl get pod
+NAME                                             READY   STATUS    RESTARTS   AGE
+node-test-consumer-96b44cbcb-gs2km               1/1     Running   0          125m
+node-test-consumer-96b44cbcb-ptvjd               1/1     Running   0          125m
+node-test-consumer-96b44cbcb-xk75j               1/1     Running   0          125m
+node-test-producer-846d9c5986-vcsf2              1/1     Running   0          125m
+</code></pre>
+<p>The producer app basically exposes 3 URLs:</p>
+<ol>
+<li><code>/kafka-test/green/:message</code></li>
+<li><code>/kafka-test/blue/:message</code></li>
+<li><code>/kafka-test/cyan/:message</code></li>
+</ol>
+<p>Where <code>:message</code> can be any valid string. Each of these URLs produce a <strong>message</strong> along with the <strong>colour</strong> information to the topic <code>test-topic</code>.</p>
+<p>The consumer group (the 3 consumer pods that we spin-up) listening for any incoming messages from the topic <code>test-topic</code>, then receives these messages and prints them on to the console according to the colour instruction.</p>
+<p>I <code>curl</code> each URL 3 times. From the following GIF you can see how message consumption is distributed across the 3 consumers in a <code>round-robin</code> manner:</p>
+<img class="MDImage_carousel__N8hEe" src="/2/4_a3b19iryt7pxff3z8ust.gif" alt="Producer and Consumer Visualisation" width="100%" height="100%"/>
+<h2>Clean Up! <a name="clean-up"></a> <sup><a href="#contents">[back to top ↑]</a></sup></h2>
+<pre><code class="hljs language-sh">
+<span class="hljs-comment"># Delete the test producer and consumer apps:</span>
+$ kubectl delete -f <span class="hljs-built_in">test</span>/k8s/
+configmap <span class="hljs-string">&quot;kafka-client-config&quot;</span> deleted
+deployment.apps <span class="hljs-string">&quot;node-test-consumer&quot;</span> deleted
+deployment.apps <span class="hljs-string">&quot;node-test-producer&quot;</span> deleted
+service <span class="hljs-string">&quot;node-test-producer&quot;</span> deleted
+
+<span class="hljs-comment"># Delete the Kafka cluster</span>
+$ kubectl delete kafka kafka-cluster
+kafka.kafka.strimzi.io <span class="hljs-string">&quot;kafka-cluster&quot;</span> deleted
+
+<span class="hljs-comment"># Delete the Strimzi cluster operator</span>
+$ kubectl delete deployments. strimzi-cluster-operator
+deployment.extensions <span class="hljs-string">&quot;strimzi-cluster-operator&quot;</span> deleted
+
+<span class="hljs-comment"># Manually delete the persistent volumes</span>
+<span class="hljs-comment"># Kafka</span>
+$ kubectl delete pvc data-kafka-cluster-kafka-0
+$ kubectl delete pvc data-kafka-cluster-kafka-1
+$ kubectl delete pvc data-kafka-cluster-kafka-2
+<span class="hljs-comment"># Zookeeper</span>
+$ kubectl delete pvc data-kafka-cluster-zookeeper-0
+$ kubectl delete pvc data-kafka-cluster-zookeeper-1
+$ kubectl delete pvc data-kafka-cluster-zookeeper-2
+</code></pre>
+<p>Finally, delete the EKS cluster:</p>
+<pre><code class="hljs language-sh">$ eksctl delete cluster kafka-eks-cluster
+[ℹ]  using region ap-south-1
+[ℹ]  deleting EKS cluster <span class="hljs-string">&quot;kafka-eks-cluster&quot;</span>
+[✔]  kubeconfig has been updated
+[ℹ]  2 sequential tasks: { delete nodegroup <span class="hljs-string">&quot;ng-9f3cbfc7&quot;</span>, delete cluster control plane <span class="hljs-string">&quot;kafka-eks-cluster&quot;</span> [async] }
+[ℹ]  will delete stack <span class="hljs-string">&quot;eksctl-kafka-eks-cluster-nodegroup-ng-9f3cbfc7&quot;</span>
+[ℹ]  waiting <span class="hljs-keyword">for</span> stack <span class="hljs-string">&quot;eksctl-kafka-eks-cluster-nodegroup-ng-9f3cbfc7&quot;</span> to get deleted
+[ℹ]  will delete stack <span class="hljs-string">&quot;eksctl-kafka-eks-cluster-cluster&quot;</span>
+[✔]  all cluster resources were deleted
+</code></pre>
+<p>Hope this helped!</p>
+<hr/>
+<p>Note: <em>This is not a tutorial per se, instead, this is me recording my observations as I setup a Kafka cluster for the first time on a Kubernetes platform using Strimzi.</em></p></main></div></div><script id="__NEXT_DATA__" type="application/json">{"props":{"pageProps":{}},"page":"/blog/2-up-and-running-with-kafka-on-aws-eks-using-strimzi","query":{},"buildId":"vZF5O8Cp0wJbkUP_UfCYA","assetPrefix":".","nextExport":true,"autoExport":true,"isFallback":false,"scriptLoader":[]}</script></body></html>

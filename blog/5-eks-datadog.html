@@ -1,0 +1,264 @@
+<!DOCTYPE html><html lang="en"><head><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.4.0/styles/github-dark.min.css"/><meta charSet="utf-8"/><meta name="viewport" content="width=device-width"/><meta name="next-head-count" content="2"/><link rel="preload" href="./_next/static/css/cd63f2b0468b5f7a.css" as="style"/><link rel="stylesheet" href="./_next/static/css/cd63f2b0468b5f7a.css" data-n-g=""/><link rel="preload" href="./_next/static/css/9d581defcc99acf1.css" as="style"/><link rel="stylesheet" href="./_next/static/css/9d581defcc99acf1.css" data-n-p=""/><noscript data-n-css=""></noscript><script defer="" nomodule="" src="./_next/static/chunks/polyfills-5cd94c89d3acac5f.js"></script><script src="./_next/static/chunks/webpack-ed47cc4bbff8e103.js" defer=""></script><script src="./_next/static/chunks/framework-91d7f78b5b4003c8.js" defer=""></script><script src="./_next/static/chunks/main-7e73d61bce33e887.js" defer=""></script><script src="./_next/static/chunks/pages/_app-e6ebfa373a417a20.js" defer=""></script><script src="./_next/static/chunks/pages/blog/5-eks-datadog-0c2d3e34232fc160.js" defer=""></script><script src="./_next/static/vZF5O8Cp0wJbkUP_UfCYA/_buildManifest.js" defer=""></script><script src="./_next/static/vZF5O8Cp0wJbkUP_UfCYA/_ssgManifest.js" defer=""></script><script src="./_next/static/vZF5O8Cp0wJbkUP_UfCYA/_middlewareManifest.js" defer=""></script></head><body><div id="__next" data-reactroot=""><div><header class="Header_header__VYZ3G"><div class="max-width-container"><h2><a href="/">Ben Sooraj</a></h2><ul><li><a href="/about">About</a></li><li><a href="/blog">Blog</a></li></ul></div></header><main class="max-width-container main"><h1 class="Markdown_postTitle__HEeQS">Sending application logs from EKS to Datadog</h1>
+<p>Datadog has been part of our stack for quite sometime now, where the <code>datadog-agent</code> installed on the EC2 instances (baked into the image) tail log files to which the application services write to.</p>
+<p>A recent project required me to send the application logs deployed on kubernetes to Datadog. This required a different approach which I would be sharing today. A few pre-requisites before I begin:</p>
+<ol>
+<li>An up and running kubernetes cluster. I use <a href="https://eksctl.io/" class="Markdown_link__M8PUN"><code>eksctl</code></a> to quickly spin up a k8s cluster on AWS EKS.</li>
+<li>A <a href="https://www.datadoghq.com/" class="Markdown_link__M8PUN">Datadog</a> account</li>
+<li>Helm v3 installed (v3 doesn&#x27;t require you to setup Tiller (Helm&#x27;s server component) on your kubernetes cluster)</li>
+</ol>
+<h2>Pre-requisites</h2>
+<p>To set the context, I have a 3-node cluster set up:</p>
+<pre><code class="hljs language-sh">$ kubectl get nodes
+NAME                                        STATUS   ROLES    AGE   VERSION
+ip-10-0-0-34.ap-south-1.compute.internal    Ready    &lt;none&gt;   9d    v1.16.13-eks-2ba888
+ip-10-0-1-144.ap-south-1.compute.internal   Ready    &lt;none&gt;   9d    v1.16.13-eks-2ba888
+ip-10-0-2-79.ap-south-1.compute.internal    Ready    &lt;none&gt;   9d    v1.16.13-eks-2ba888
+</code></pre>
+<p>Add and update the Datadog chart repository,</p>
+<pre><code class="hljs language-sh"><span class="hljs-comment"># Ensure that you are running helm v3</span>
+$ helm version --short
+v3.3.1+g249e521
+
+<span class="hljs-comment"># Add and update the Datadog and stable chart repositories</span>
+$ helm repo add datadog https://helm.datadoghq.com
+<span class="hljs-string">&quot;datadog&quot;</span> has been added to your repositories
+
+$ helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+<span class="hljs-string">&quot;stable&quot;</span> has been added to your repositories
+
+$ helm repo update
+Hang tight <span class="hljs-keyword">while</span> we grab the latest from your chart repositories...
+...Successfully got an update from the <span class="hljs-string">&quot;stable&quot;</span> chart repository
+Update Complete. ⎈Happy Helming!⎈
+
+$ helm repo list
+NAME   	URL                                              
+stable 	https://kubernetes-charts.storage.googleapis.com/
+datadog	https://helm.datadoghq.com        
+
+<span class="hljs-comment"># Search for datadog chart. We will be using datadog/datadog</span>
+$ helm search repo datadog
+NAME           	CHART VERSION	APP VERSION	DESCRIPTION             
+datadog/datadog	2.4.13       	7          	Datadog Agent           
+stable/datadog 	2.3.42       	7          	DEPRECATED Datadog Agent
+</code></pre>
+<p>Clone the git repository <code>bensooraj/node-eks-datadog-integration</code>:</p>
+<pre><code class="hljs language-sh">$ git <span class="hljs-built_in">clone</span> https://github.com/bensooraj/node-eks-datadog-integration.git
+
+<span class="hljs-comment"># A quick overview overview of the project structure</span>
+$ tree -L 2
+.
+├── Makefile
+├── README.md
+├── coverage
+├── datadog
+│   └── values.yml
+├── docker
+│   └── Dockerfile
+├── kubernetes
+│   ├── deployment.yaml
+│   └── service.yaml
+├── node_modules
+│   ├── @dabh
+│   ....
+│   ...
+│   ..
+│   ├── winston
+│   └── winston-transport
+├── package-lock.json
+├── package.json
+└── server.js
+
+83 directories, 9 files
+</code></pre>
+<p>Check <a href="https://github.com/DataDog/helm-charts/blob/master/charts/datadog/values.yaml" class="Markdown_link__M8PUN">datadog-values.yaml</a> for the latest YAML file.</p>
+<h2>Deploy the application</h2>
+<p>We will be deploying an ultra simple Node.js API which logs out JSON formatted log messages whenever it receives a <code>GET</code> request:</p>
+<pre><code class="hljs language-js"><span class="hljs-comment">// server.js</span>
+<span class="hljs-keyword">const</span> express = <span class="hljs-built_in">require</span>(<span class="hljs-string">&#x27;express&#x27;</span>);
+<span class="hljs-keyword">const</span> winston = <span class="hljs-built_in">require</span>(<span class="hljs-string">&#x27;winston&#x27;</span>);
+
+<span class="hljs-comment">// Constants</span>
+<span class="hljs-keyword">const</span> <span class="hljs-variable constant_">PORT</span> = <span class="hljs-number">8080</span>;
+<span class="hljs-keyword">const</span> <span class="hljs-variable constant_">HOST</span> = <span class="hljs-string">&#x27;0.0.0.0&#x27;</span>;
+
+<span class="hljs-keyword">const</span> app = <span class="hljs-title function_">express</span>();
+
+<span class="hljs-keyword">const</span> logger = winston.<span class="hljs-title function_">createLogger</span>({
+    <span class="hljs-attr">transports</span>: [
+        <span class="hljs-keyword">new</span> winston.<span class="hljs-property">transports</span>.<span class="hljs-title class_">Console</span>({
+            <span class="hljs-attr">handleExceptions</span>: <span class="hljs-literal">true</span>,
+        })
+    ],
+    <span class="hljs-attr">level</span>: <span class="hljs-string">&#x27;debug&#x27;</span>,
+    <span class="hljs-attr">exitOnError</span>: <span class="hljs-literal">false</span>,
+    <span class="hljs-attr">format</span>: winston.<span class="hljs-property">format</span>.<span class="hljs-title function_">combine</span>(
+        winston.<span class="hljs-property">format</span>.<span class="hljs-title function_">splat</span>(),
+        winston.<span class="hljs-property">format</span>.<span class="hljs-title function_">timestamp</span>(),
+        winston.<span class="hljs-property">format</span>.<span class="hljs-title function_">json</span>()
+    ),
+});
+
+app.<span class="hljs-title function_">get</span>(<span class="hljs-string">&#x27;/&#x27;</span>, <span class="hljs-function">(<span class="hljs-params">req, res</span>) =&gt;</span> {
+    logger.<span class="hljs-title function_">silly</span>(<span class="hljs-string">&quot;This is a silly message&quot;</span>, { <span class="hljs-attr">url</span>: req.<span class="hljs-property">url</span>, <span class="hljs-attr">environment</span>: <span class="hljs-string">&quot;test&quot;</span> });
+    logger.<span class="hljs-title function_">debug</span>(<span class="hljs-string">&quot;This is a debug message&quot;</span>, { <span class="hljs-attr">url</span>: req.<span class="hljs-property">url</span>, <span class="hljs-attr">environment</span>: <span class="hljs-string">&quot;test&quot;</span> });
+    logger.<span class="hljs-title function_">info</span>(<span class="hljs-string">&quot;This is an info message&quot;</span>, { <span class="hljs-attr">url</span>: req.<span class="hljs-property">url</span>, <span class="hljs-attr">environment</span>: <span class="hljs-string">&quot;test&quot;</span> });
+
+    res.<span class="hljs-title function_">json</span>({
+        <span class="hljs-attr">response_message</span>: <span class="hljs-string">&#x27;Hello World&#x27;</span>
+    });
+});
+
+app.<span class="hljs-title function_">listen</span>(<span class="hljs-variable constant_">PORT</span>, <span class="hljs-variable constant_">HOST</span>);
+logger.<span class="hljs-title function_">info</span>(<span class="hljs-string">&quot;Running on http://${HOST}:${PORT}&quot;</span>, { <span class="hljs-attr">host</span>: <span class="hljs-variable constant_">HOST</span>, <span class="hljs-attr">port</span>: <span class="hljs-variable constant_">PORT</span>, <span class="hljs-attr">environment</span>: <span class="hljs-string">&quot;test&quot;</span> });
+</code></pre>
+<p>Relevant sections from the deployment YAML file,</p>
+<pre><code class="hljs language-yaml"><span class="hljs-attr">apiVersion:</span> <span class="hljs-string">apps/v1</span>
+<span class="hljs-attr">kind:</span> <span class="hljs-string">Deployment</span>
+<span class="hljs-attr">metadata:</span>
+  <span class="hljs-attr">name:</span> <span class="hljs-string">eks-datadog-demo-node-app</span>
+  <span class="hljs-attr">annotations:</span>
+    <span class="hljs-attr">ad.datadoghq.com/eks-datadog-demo-node-app.logs:</span> <span class="hljs-string">&#x27;[{&quot;source&quot;:&quot;nodejs&quot;,&quot;service&quot;:&quot;eks-datadog-demo-node-app&quot;}]&#x27;</span>  
+  <span class="hljs-attr">labels:</span>
+    <span class="hljs-attr">tags.datadoghq.com/env:</span> <span class="hljs-string">&quot;test&quot;</span>
+    <span class="hljs-attr">tags.datadoghq.com/service:</span> <span class="hljs-string">&quot;eks-datadog-demo-node-app&quot;</span>
+    <span class="hljs-attr">tags.datadoghq.com/version:</span> <span class="hljs-string">&quot;v1.0.1&quot;</span>
+<span class="hljs-attr">spec:</span>
+  <span class="hljs-comment"># # #</span>
+  <span class="hljs-comment"># #</span>
+  <span class="hljs-comment">#</span>
+  <span class="hljs-attr">template:</span>
+    <span class="hljs-attr">metadata:</span>
+      <span class="hljs-attr">annotations:</span>
+        <span class="hljs-attr">ad.datadoghq.com/eks-datadog-demo-node-app.logs:</span> <span class="hljs-string">&#x27;[{&quot;source&quot;:&quot;nodejs&quot;,&quot;service&quot;:&quot;eks-datadog-demo-node-app&quot;}]&#x27;</span>
+      <span class="hljs-attr">labels:</span>
+        <span class="hljs-attr">app:</span> <span class="hljs-string">eks-datadog-demo-node-app</span>
+        <span class="hljs-attr">tags.datadoghq.com/env:</span> <span class="hljs-string">&quot;test&quot;</span>
+        <span class="hljs-attr">tags.datadoghq.com/service:</span> <span class="hljs-string">&quot;eks-datadog-demo-node-app&quot;</span>
+		<span class="hljs-attr">tags.datadoghq.com/version:</span> <span class="hljs-string">&quot;v1.0.1&quot;</span>
+	<span class="hljs-attr">spec:</span>
+      <span class="hljs-attr">containers:</span>
+        <span class="hljs-bullet">-</span> <span class="hljs-attr">name:</span> <span class="hljs-string">eks-datadog-demo-node-app</span>
+  <span class="hljs-comment"># # #</span>
+  <span class="hljs-comment"># #</span>
+  <span class="hljs-comment">#</span>
+</code></pre>
+<p>Pay close attention to the <code>labels</code> and <code>annotations</code>. These are especially useful if you are planning to collect <code>traces</code> and application <code>metrics</code>, which are outside the scope of this article.</p>
+<p>It&#x27;s worth mentioning that you can exclude or include logs from deployments and/or pods by configuring the settings in the <a href="https://docs.datadoghq.com/agent/logs/advanced_log_collection/?tab=kubernetes#exclude-at-match" class="Markdown_link__M8PUN"><code>annotations</code></a>. For example, to exclude all logs from the above deployment configure the <code>log_processing_rules</code> in the <code>annotations</code> section as follows:</p>
+<pre><code class="hljs language-yaml"><span class="hljs-attr">apiVersion:</span> <span class="hljs-string">apps/v1</span>
+<span class="hljs-attr">kind:</span> <span class="hljs-string">Deployment</span>
+<span class="hljs-attr">metadata:</span>
+  <span class="hljs-attr">name:</span> <span class="hljs-string">eks-datadog-demo-node-app</span>
+  <span class="hljs-attr">annotations:</span>
+    <span class="hljs-attr">ad.datadoghq.com/eks-datadog-demo-node-app.logs:</span> <span class="hljs-string">&gt;-
+      [{
+        &quot;source&quot;: &quot;nodejs&quot;,
+        &quot;service&quot;: &quot;eks-datadog-demo-node-app&quot;,
+        &quot;log_processing_rules&quot;: [{
+          &quot;type&quot;: &quot;exclude_at_match&quot;,
+          &quot;name&quot;: &quot;exclude_this_deployment&quot;,
+          &quot;pattern&quot;:&quot;\.*&quot;
+        }]
+      }]  
+</span>  <span class="hljs-attr">labels:</span>
+    <span class="hljs-attr">tags.datadoghq.com/env:</span> <span class="hljs-string">&quot;test&quot;</span>
+    <span class="hljs-attr">tags.datadoghq.com/service:</span> <span class="hljs-string">&quot;eks-datadog-demo-node-app&quot;</span>
+    <span class="hljs-attr">tags.datadoghq.com/version:</span> <span class="hljs-string">&quot;v1.0.1&quot;</span>
+<span class="hljs-attr">spec:</span>
+  <span class="hljs-comment"># # #</span>
+  <span class="hljs-comment"># #</span>
+  <span class="hljs-comment">#</span>
+</code></pre>
+<p>Deploy the API and exopse it as a service,</p>
+<pre><code class="hljs language-sh"><span class="hljs-comment"># Deployment</span>
+$ kubectl apply -f kubernetes/deployment.yaml
+
+<span class="hljs-comment"># Service</span>
+$ kubectl apply -f kubernetes/service.yaml
+
+<span class="hljs-comment"># Verify that the API is up and running</span>
+$ kubectl get deployment,svc,po
+NAME                                               READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/eks-datadog-demo-node-app          2/2     2            2           30h
+
+NAME                                       TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE
+service/eks-datadog-demo-node-app          ClusterIP   172.20.205.150   &lt;none&gt;        8080/TCP   30h
+
+NAME                                                    READY   STATUS    RESTARTS   AGE
+pod/eks-datadog-demo-node-app-7bf7cf764f-gpqvf          1/1     Running   0          29h
+pod/eks-datadog-demo-node-app-7bf7cf764f-spb7m          1/1     Running   0          29h
+</code></pre>
+<h2>Deploy the Datadog agent</h2>
+<p>Open the file <code>datadog/values.yml</code> and ensure that <code>datadog.logs.enabled</code> and <code>datadog.logs.containerCollectAll</code> are set to <code>true</code>.</p>
+<pre><code class="hljs language-yaml"><span class="hljs-attr">datadog:</span>
+  <span class="hljs-comment">## @param logs - object - required</span>
+  <span class="hljs-comment">## Enable logs agent and provide custom configs</span>
+  <span class="hljs-comment">#</span>
+  <span class="hljs-attr">logs:</span>
+    <span class="hljs-comment">## @param enabled - boolean - optional - default: false</span>
+    <span class="hljs-comment">## Enables this to activate Datadog Agent log collection.</span>
+    <span class="hljs-comment">#</span>
+    <span class="hljs-attr">enabled:</span> <span class="hljs-literal">true</span>
+    <span class="hljs-comment">## @param containerCollectAll - boolean - optional - default: false</span>
+    <span class="hljs-comment">## Enable this to allow log collection for all containers.</span>
+    <span class="hljs-comment">#</span>
+    <span class="hljs-attr">containerCollectAll:</span> <span class="hljs-literal">true</span>
+</code></pre>
+<p>Deploy the datadog-agent:</p>
+<pre><code class="hljs language-sh">$ helm install datadog-agent -f datadog/values.yml  --<span class="hljs-built_in">set</span> datadog.apiKey=&lt;DATADOG_API_KEY&gt; datadog/datadog
+
+<span class="hljs-comment"># Helm will deploy one datadog-agent pod per node</span>
+$ kubectl get deployment,svc,po
+NAME                                               READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/datadog-agent-kube-state-metrics   1/1     1            1           29h
+
+NAME                                       TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE
+service/datadog-agent-kube-state-metrics   ClusterIP   172.20.129.97    &lt;none&gt;        8080/TCP   29h
+
+NAME                                                    READY   STATUS    RESTARTS   AGE
+pod/datadog-agent-b4mtv                                 2/2     Running   0          29h
+pod/datadog-agent-f6jn7                                 2/2     Running   0          29h
+pod/datadog-agent-zvp6p                                 2/2     Running   0          29h
+</code></pre>
+<p>Note that even though the agent is deployed in the <code>default</code> namespace, it can collect logs and metrics from deployments/pods from all namespaces.</p>
+<h2>O Logs! Where art thou?</h2>
+<p>Now we have the API service (for generating logs) and the Datadog agent (for streaming the logs to Datadog) all set! I assume this is what happens behind the scenes:</p>
+<ol>
+<li>The API service writes logs to <strong><code>stdout</code></strong> and <strong><code>stderr</code></strong></li>
+<li>The <strong><code>kubelet</code></strong> writes these logs to <strong><code>/var/log/pods/&lt;namespace&gt;_&lt;pod_name&gt;_&lt;pod_id&gt;/&lt;container_name&gt;/&lt;num&gt;.log</code></strong> on the node machine</li>
+<li>The **<code>datadog-agent</code>**s running on each node tails these log files and streams them to the Datadog servers</li>
+</ol>
+<p>Anyways, let&#x27;s generate some logs:</p>
+<pre><code class="hljs language-sh"><span class="hljs-comment"># Port forward to access the API service from your local machine</span>
+$ kubectl port-forward service/eks-datadog-demo-node-app 8080:8080
+Forwarding from 127.0.0.1:8080 -&gt; 8080
+Forwarding from [::1]:8080 -&gt; 8080
+
+<span class="hljs-comment"># Generate some logs using curl or ab</span>
+$ ab -n 50 -c 2 -l http://localhost:8080/
+
+<span class="hljs-comment"># Verify that the logs are generated</span>
+j$ kubectl logs -l app=eks-datadog-demo-node-app --since=100m
+{<span class="hljs-string">&quot;url&quot;</span>:<span class="hljs-string">&quot;/&quot;</span>,<span class="hljs-string">&quot;environment&quot;</span>:<span class="hljs-string">&quot;test&quot;</span>,<span class="hljs-string">&quot;level&quot;</span>:<span class="hljs-string">&quot;debug&quot;</span>,<span class="hljs-string">&quot;message&quot;</span>:<span class="hljs-string">&quot;This is a debug message&quot;</span>,<span class="hljs-string">&quot;timestamp&quot;</span>:<span class="hljs-string">&quot;2020-09-04T19:35:52.126Z&quot;</span>}
+{<span class="hljs-string">&quot;url&quot;</span>:<span class="hljs-string">&quot;/&quot;</span>,<span class="hljs-string">&quot;environment&quot;</span>:<span class="hljs-string">&quot;test&quot;</span>,<span class="hljs-string">&quot;level&quot;</span>:<span class="hljs-string">&quot;info&quot;</span>,<span class="hljs-string">&quot;message&quot;</span>:<span class="hljs-string">&quot;This is an info message&quot;</span>,<span class="hljs-string">&quot;timestamp&quot;</span>:<span class="hljs-string">&quot;2020-09-04T19:35:53.308Z&quot;</span>}
+....
+...
+{<span class="hljs-string">&quot;url&quot;</span>:<span class="hljs-string">&quot;/&quot;</span>,<span class="hljs-string">&quot;environment&quot;</span>:<span class="hljs-string">&quot;test&quot;</span>,<span class="hljs-string">&quot;level&quot;</span>:<span class="hljs-string">&quot;debug&quot;</span>,<span class="hljs-string">&quot;message&quot;</span>:<span class="hljs-string">&quot;This is a debug message&quot;</span>,<span class="hljs-string">&quot;timestamp&quot;</span>:<span class="hljs-string">&quot;2020-09-04T19:35:53.310Z&quot;</span>}
+{<span class="hljs-string">&quot;url&quot;</span>:<span class="hljs-string">&quot;/&quot;</span>,<span class="hljs-string">&quot;environment&quot;</span>:<span class="hljs-string">&quot;test&quot;</span>,<span class="hljs-string">&quot;level&quot;</span>:<span class="hljs-string">&quot;info&quot;</span>,<span class="hljs-string">&quot;message&quot;</span>:<span class="hljs-string">&quot;This is an info message&quot;</span>,<span class="hljs-string">&quot;timestamp&quot;</span>:<span class="hljs-string">&quot;2020-09-04T19:35:53.310Z&quot;</span>}
+</code></pre>
+<p>Navigate to <code>Log Explorer</code> in Datadog to see the logs that we generated above</p>
+<img class="MDImage_carousel__N8hEe" src="/5/2_dd_ui_overview.png" alt="Datadog UI overview" width="100%" height="100%"/>
+<p>Click on any one of the log records to view more details</p>
+<img class="MDImage_carousel__N8hEe" src="/5/2_dd_log_detail_view.png" alt="Datadog log record detail view" width="100%" height="100%"/>
+<p>On the left pane, you can filter the logs by namespace, pods etc. as well!</p>
+<img class="MDImage_carousel__N8hEe" src="/5/2_filter_ui_ns.png" alt="Datadog log record detail view UI" width="100%" height="100%"/>
+<p>That&#x27;s it for now!</p>
+<p>I hope this helped and if you have any feedback for me, please let me know :smile:.</p>
+<p>Further reading:</p>
+<ol>
+<li><a href="https://kubernetes.io/docs/concepts/cluster-administration/logging/" class="Markdown_link__M8PUN">Logging Architecture</a></li>
+<li><a href="https://docs.datadoghq.com/agent/kubernetes/log/?tab=daemonset#log-collection" class="Markdown_link__M8PUN">Datadog kubernetes log collection</a></li>
+<li><a href="https://docs.datadoghq.com/agent/kubernetes/?tab=daemonset" class="Markdown_link__M8PUN">Datadog agent as a DaemonSet (recommended)</a></li>
+</ol>
+<hr/>
+<p>Note: <em>This article is not an in-depth tutorial on implemending logging for applications running on kubernetes, but a journal of my learnings.</em></p></main></div></div><script id="__NEXT_DATA__" type="application/json">{"props":{"pageProps":{}},"page":"/blog/5-eks-datadog","query":{},"buildId":"vZF5O8Cp0wJbkUP_UfCYA","assetPrefix":".","nextExport":true,"autoExport":true,"isFallback":false,"scriptLoader":[]}</script></body></html>

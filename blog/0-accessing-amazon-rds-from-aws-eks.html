@@ -1,0 +1,281 @@
+<!DOCTYPE html><html lang="en"><head><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.4.0/styles/github-dark.min.css"/><meta charSet="utf-8"/><meta name="viewport" content="width=device-width"/><meta name="next-head-count" content="2"/><link rel="preload" href="./_next/static/css/cd63f2b0468b5f7a.css" as="style"/><link rel="stylesheet" href="./_next/static/css/cd63f2b0468b5f7a.css" data-n-g=""/><link rel="preload" href="./_next/static/css/9d581defcc99acf1.css" as="style"/><link rel="stylesheet" href="./_next/static/css/9d581defcc99acf1.css" data-n-p=""/><noscript data-n-css=""></noscript><script defer="" nomodule="" src="./_next/static/chunks/polyfills-5cd94c89d3acac5f.js"></script><script src="./_next/static/chunks/webpack-ed47cc4bbff8e103.js" defer=""></script><script src="./_next/static/chunks/framework-91d7f78b5b4003c8.js" defer=""></script><script src="./_next/static/chunks/main-7e73d61bce33e887.js" defer=""></script><script src="./_next/static/chunks/pages/_app-e6ebfa373a417a20.js" defer=""></script><script src="./_next/static/chunks/pages/blog/0-accessing-amazon-rds-from-aws-eks-8a421835077f3fab.js" defer=""></script><script src="./_next/static/vZF5O8Cp0wJbkUP_UfCYA/_buildManifest.js" defer=""></script><script src="./_next/static/vZF5O8Cp0wJbkUP_UfCYA/_ssgManifest.js" defer=""></script><script src="./_next/static/vZF5O8Cp0wJbkUP_UfCYA/_middlewareManifest.js" defer=""></script></head><body><div id="__next" data-reactroot=""><div><header class="Header_header__VYZ3G"><div class="max-width-container"><h2><a href="/">Ben Sooraj</a></h2><ul><li><a href="/about">About</a></li><li><a href="/blog">Blog</a></li></ul></div></header><main class="max-width-container main"><h1 class="Markdown_postTitle__HEeQS">Accessing Amazon RDS From AWS EKS</h1>
+<h2>Contents <a id="contents"></a></h2>
+<ol>
+<li><a href="#premise" class="Markdown_link__M8PUN">Premise</a></li>
+<li><a href="#setup-the-mysql-database" class="Markdown_link__M8PUN">Setup the MySQL Database - Amazon RDS</a>
+<ol>
+<li><a href="#rds-create-the-vpc" class="Markdown_link__M8PUN">Create the VPC</a></li>
+<li><a href="#rds-create-subnets" class="Markdown_link__M8PUN">Create the subnets</a></li>
+<li><a href="#rds-create-db-subnet-group" class="Markdown_link__M8PUN">Create the DB subnet group</a></li>
+<li><a href="#rds-create-vpc-security-group" class="Markdown_link__M8PUN">Create the VPC security group</a></li>
+<li><a href="#rds-create-db-instance-in-the-vpc" class="Markdown_link__M8PUN">Create a DB instance in the VPC</a></li>
+<li><a href="#rds-setup-diagram" class="Markdown_link__M8PUN">Amazon RDS setup diagram</a></li>
+</ol>
+</li>
+<li><a href="#setup-the-eks-cluster" class="Markdown_link__M8PUN">Setup the EKS cluster</a></li>
+<li><a href="#lets-build-the-bridge" class="Markdown_link__M8PUN">Let&#x27;s build the bridge!</a>
+<ol>
+<li><a href="#create-and-accept-vpc-peering-connections" class="Markdown_link__M8PUN">Create and Accept a VPC Peering Connection</a></li>
+<li><a href="#update-eks-cluster-vpc-route-table" class="Markdown_link__M8PUN">Update the EKS cluster VPC&#x27;s route table</a></li>
+<li><a href="#update-rds-vpc-route-table" class="Markdown_link__M8PUN">Update the RDS VPC&#x27;s route table</a></li>
+<li><a href="#update-rds-instance-security-group" class="Markdown_link__M8PUN">Update the RDS instance&#x27;s security group</a></li>
+</ol>
+</li>
+<li><a href="#test-the-connection" class="Markdown_link__M8PUN">Test the connection</a></li>
+</ol>
+<h2>1. Premise <a id="premise"></a></h2>
+<p>When moving your services to the Kubernetes ecosystem for the first time, it is best practice to port only the stateless parts to begin with.</p>
+<p>Here&#x27;s the problem I had to solve: Our service uses <a href="https://aws.amazon.com/rds/mysql/" class="Markdown_link__M8PUN">Amazon RDS for MySQL</a>. Both the RDS instance(s) and EKS reside within their own dedicated <a href="https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html" class="Markdown_link__M8PUN">VPC</a>. How do resources running within AWS EKS communicate with the database?</p>
+<img class="MDImage_carousel__N8hEe" src="/0/1_9f54sopkrm2za71fhvl5.png" alt="Problem visualised" width="100%" height="100%"/>
+<p>Let&#x27;s dive right in!</p>
+<h2>2. Setup the MySQL Database (Amazon RDS) <a id="setup-the-mysql-database"></a></h2>
+<p>We will be using the AWS CLI for setting up MySQL database.</p>
+<h3>2.1 Create the VPC <a id="rds-create-the-vpc"></a></h3>
+<p>We will first create a VPC with the CIDR block <code>10.0.0.0/24</code> which accommodate 254 hosts in all. This is <strong>more than enough</strong> to host our RDS instance.</p>
+<pre><code class="hljs language-sh">$ aws ec2 create-vpc --cidr-block 10.0.0.0/24 | jq <span class="hljs-string">&#x27;{VpcId:.Vpc.VpcId,CidrBlock:.Vpc.CidrBlock}&#x27;</span>
+{
+    <span class="hljs-string">&quot;VpcId&quot;</span>: <span class="hljs-string">&quot;vpc-0cf40a5f6db5eb3cd&quot;</span>,
+    <span class="hljs-string">&quot;CidrBlock&quot;</span>: <span class="hljs-string">&quot;10.0.0.0/24&quot;</span>
+}
+
+<span class="hljs-comment"># Export the RDS VPC ID for easy reference in the subsequent commands</span>
+$ <span class="hljs-built_in">export</span> RDS_VPC_ID=vpc-0cf40a5f6db5eb3cd
+</code></pre>
+<h3>2.2 Create the subnets <a id="rds-create-subnets"></a></h3>
+<p>RDS instances launched in a VPC must have a <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_VPC.WorkingWithRDSInstanceinaVPC.html#USER_VPC.Subnets" class="Markdown_link__M8PUN">DB subnet group</a>. DB subnet groups are a collection of subnets within a VPC. Each DB subnet group should have <code>subnets</code> in at least two <code>Availability Zones</code> in a given <code>AWS Region</code>.</p>
+<p>We will divide the RDS VPC (<code>RDS_VPC_ID</code>) into two equal subnets: <code>10.0.0.0/25</code> and <code>10.0.0.128/25</code>.</p>
+<p>So, let&#x27;s create the first subnet in the availability zone <code>ap-south-1b</code>:</p>
+<pre><code class="hljs language-sh">$ aws ec2 create-subnet --availability-zone <span class="hljs-string">&quot;ap-south-1b&quot;</span> --vpc-id <span class="hljs-variable">${RDS_VPC_ID}</span> --cidr-block 10.0.0.0/25 | jq <span class="hljs-string">&#x27;{SubnetId:.Subnet.SubnetId,AvailabilityZone:.Subnet.AvailabilityZone,CidrBlock:.Subnet.CidrBlock,VpcId:.Subnet.VpcId}&#x27;</span>
+<span class="hljs-comment"># Response:</span>
+{
+  <span class="hljs-string">&quot;SubnetId&quot;</span>: <span class="hljs-string">&quot;subnet-042a4bee8e92287e8&quot;</span>,
+  <span class="hljs-string">&quot;AvailabilityZone&quot;</span>: <span class="hljs-string">&quot;ap-south-1b&quot;</span>,
+  <span class="hljs-string">&quot;CidrBlock&quot;</span>: <span class="hljs-string">&quot;10.0.0.0/25&quot;</span>,
+  <span class="hljs-string">&quot;VpcId&quot;</span>: <span class="hljs-string">&quot;vpc-0cf40a5f6db5eb3cd&quot;</span>
+}
+
+</code></pre>
+<p>and the second one in the availability zone <code>ap-south-1a</code></p>
+<pre><code class="hljs language-sh">$ aws ec2 create-subnet --availability-zone <span class="hljs-string">&quot;ap-south-1a&quot;</span> --vpc-id <span class="hljs-variable">${RDS_VPC_ID}</span> --cidr-block 10.0.0.128/25 | jq <span class="hljs-string">&#x27;{SubnetId:.Subnet.SubnetId,AvailabilityZone:.Subnet.AvailabilityZone,CidrBlock:.Subnet.CidrBlock,VpcId:.Subnet.VpcId}&#x27;</span>
+<span class="hljs-comment"># Response:</span>
+{
+  <span class="hljs-string">&quot;SubnetId&quot;</span>: <span class="hljs-string">&quot;subnet-0c01a5ba480b930f4&quot;</span>,
+  <span class="hljs-string">&quot;AvailabilityZone&quot;</span>: <span class="hljs-string">&quot;ap-south-1a&quot;</span>,
+  <span class="hljs-string">&quot;CidrBlock&quot;</span>: <span class="hljs-string">&quot;10.0.0.128/25&quot;</span>,
+  <span class="hljs-string">&quot;VpcId&quot;</span>: <span class="hljs-string">&quot;vpc-0cf40a5f6db5eb3cd&quot;</span>
+}
+</code></pre>
+<p>Each VPC has an implicit router which controls where network traffic is directed. Each subnet in a VPC must be explicitly associated with a route table, which controls the routing for the subnet.</p>
+<p>Let&#x27;s go ahead and associate these two subnet that we created, to the VPC&#x27;s route table:</p>
+<pre><code class="hljs language-sh"><span class="hljs-comment"># Fetch the route table information</span>
+$ aws ec2 describe-route-tables --filters Name=vpc-id,Values=<span class="hljs-variable">${RDS_VPC_ID}</span> | jq <span class="hljs-string">&#x27;.RouteTables[0].RouteTableId&#x27;</span>
+<span class="hljs-string">&quot;rtb-0e680357de97595b1&quot;</span>
+
+<span class="hljs-comment"># For easy reference</span>
+$ <span class="hljs-built_in">export</span> RDS_ROUTE_TABLE_ID=rtb-0e680357de97595b1
+
+<span class="hljs-comment"># Associate the first subnet with the route table</span>
+$ aws ec2 associate-route-table --route-table-id rtb-0e680357de97595b1 --subnet-id subnet-042a4bee8e92287e8
+{
+    <span class="hljs-string">&quot;AssociationId&quot;</span>: <span class="hljs-string">&quot;rtbassoc-02198db22b2d36c97&quot;</span>
+}
+
+<span class="hljs-comment"># Associate the second subnet with the route table</span>
+$ aws ec2 associate-route-table --route-table-id rtb-0e680357de97595b1 --subnet-id subnet-0c01a5ba480b930f4
+{
+    <span class="hljs-string">&quot;AssociationId&quot;</span>: <span class="hljs-string">&quot;rtbassoc-0e5c3959d360c92ab&quot;</span>
+}
+
+</code></pre>
+<h3>2.3 Create DB Subnet Group <a id="rds-create-db-subnet-group"></a></h3>
+<p>Now that we have two subnets spanning two availability zones, we can go ahead and create the <strong>DB subnet group</strong>.</p>
+<pre><code class="hljs language-sh">$ aws rds create-db-subnet-group --db-subnet-group-name  <span class="hljs-string">&quot;DemoDBSubnetGroup&quot;</span> --db-subnet-group-description <span class="hljs-string">&quot;Demo DB Subnet Group&quot;</span> --subnet-ids <span class="hljs-string">&quot;subnet-042a4bee8e92287e8&quot;</span> <span class="hljs-string">&quot;subnet-0c01a5ba480b930f4&quot;</span> | jq <span class="hljs-string">&#x27;{DBSubnetGroupName:.DBSubnetGroup.DBSubnetGroupName,VpcId:.DBSubnetGroup.VpcId,Subnets:.DBSubnetGroup.Subnets[].SubnetIdentifier}&#x27;</span>
+<span class="hljs-comment"># Response:</span>
+{
+  <span class="hljs-string">&quot;DBSubnetGroupName&quot;</span>: <span class="hljs-string">&quot;demodbsubnetgroup&quot;</span>,
+  <span class="hljs-string">&quot;VpcId&quot;</span>: <span class="hljs-string">&quot;vpc-0cf40a5f6db5eb3cd&quot;</span>,
+  <span class="hljs-string">&quot;Subnets&quot;</span>: <span class="hljs-string">&quot;subnet-0c01a5ba480b930f4&quot;</span>
+}
+{
+  <span class="hljs-string">&quot;DBSubnetGroupName&quot;</span>: <span class="hljs-string">&quot;demodbsubnetgroup&quot;</span>,
+  <span class="hljs-string">&quot;VpcId&quot;</span>: <span class="hljs-string">&quot;vpc-0cf40a5f6db5eb3cd&quot;</span>,
+  <span class="hljs-string">&quot;Subnets&quot;</span>: <span class="hljs-string">&quot;subnet-042a4bee8e92287e8&quot;</span>
+}
+</code></pre>
+<h3>2.4 Create a VPC Security Group <a id="rds-create-vpc-security-group"></a></h3>
+<p>The <em>penultimate</em> step to creating the DB instance is creating a VPC security group, an instance level virtual firewall with <em>rules</em> to control inbound and outbound traffic.</p>
+<pre><code class="hljs language-ruby"><span class="hljs-variable">$ </span>aws ec2 create-security-group --group-name <span class="hljs-title class_">DemoRDSSecurityGroup</span> --description <span class="hljs-string">&quot;Demo RDS security group&quot;</span> --vpc-id <span class="hljs-variable">${</span><span class="hljs-variable constant_">RDS_VPC_ID</span>}
+{
+    <span class="hljs-string">&quot;GroupId&quot;</span>: <span class="hljs-string">&quot;sg-06800acf8d6279971&quot;</span>
+}
+
+<span class="hljs-comment"># Export the RDS VPC Security Group ID for easy reference in the subsequent commands</span>
+<span class="hljs-variable">$ </span>export <span class="hljs-variable constant_">RDS_VPC_SECURITY_GROUP_ID</span>=sg-06800acf8d6279971
+</code></pre>
+<p>We will use this security group at a later point, to set an <code>inbound</code> rule to allow all traffic from the EKS cluster to the RDS instance.</p>
+<h3>2.5 Create a DB Instance in the VPC <a id="rds-create-db-instance-in-the-vpc"></a></h3>
+<pre><code class="hljs language-sh">$ aws rds create-db-instance \
+  --db-name demordsmyqldb \
+  --db-instance-identifier demordsmyqldbinstance \
+  --allocated-storage 10 \
+  --db-instance-class db.t2.micro \
+  --engine mysql \
+  --engine-version <span class="hljs-string">&quot;5.7.26&quot;</span> \
+  --master-username demoappuser \
+  --master-user-password demoappuserpassword \
+  --no-publicly-accessible \
+  --vpc-security-group-ids <span class="hljs-variable">${RDS_VPC_SECURITY_GROUP_ID}</span> \
+  --db-subnet-group-name <span class="hljs-string">&quot;demodbsubnetgroup&quot;</span> \
+  --availability-zone ap-south-1b \
+  --port 3306 | jq <span class="hljs-string">&#x27;{DBInstanceIdentifier:.DBInstance.DBInstanceIdentifier,Engine:.DBInstance.Engine,DBName:.DBInstance.DBName,VpcSecurityGroups:.DBInstance.VpcSecurityGroups,EngineVersion:.DBInstance.EngineVersion,PubliclyAccessible:.DBInstance.PubliclyAccessible}&#x27;</span>
+
+<span class="hljs-comment"># Respone:</span>
+{
+  <span class="hljs-string">&quot;DBInstanceIdentifier&quot;</span>: <span class="hljs-string">&quot;demordsmyqldbinstance&quot;</span>,
+  <span class="hljs-string">&quot;Engine&quot;</span>: <span class="hljs-string">&quot;mysql&quot;</span>,
+  <span class="hljs-string">&quot;DBName&quot;</span>: <span class="hljs-string">&quot;demordsmyqldb&quot;</span>,
+  <span class="hljs-string">&quot;VpcSecurityGroups&quot;</span>: [
+    {
+      <span class="hljs-string">&quot;VpcSecurityGroupId&quot;</span>: <span class="hljs-string">&quot;sg-06800acf8d6279971&quot;</span>,
+      <span class="hljs-string">&quot;Status&quot;</span>: <span class="hljs-string">&quot;active&quot;</span>
+    }
+  ],
+  <span class="hljs-string">&quot;EngineVersion&quot;</span>: <span class="hljs-string">&quot;5.7.26&quot;</span>,
+  <span class="hljs-string">&quot;PubliclyAccessible&quot;</span>: <span class="hljs-literal">false</span>
+}
+</code></pre>
+<p>We can verify that the DB instance has been created in the UI as well:</p>
+<img class="MDImage_carousel__N8hEe" src="/0/2_5reunqhdinqcp3vlrbq4.png" alt="RDS MySQL DB Instance Details" width="100%" height="100%"/>
+<h3>2.6 Amazon RDS setup diagram <a id="rds-setup-diagram"></a></h3>
+<img class="MDImage_carousel__N8hEe" src="/0/3_feg2ujod4ja6vtudique.jpeg" alt="AWS RDS Setup Diagram" width="100%" height="100%"/>
+<h2>3. Setup the EKS cluster <a id="setup-the-eks-cluster"></a></h2>
+<p>Spinning up an EKS cluster on AWS is as simple as:</p>
+<pre><code class="hljs language-sh">$ eksctl create cluster --name=demo-eks-cluster --nodes=2 --region=ap-south-1
+[ℹ]  using region ap-south-1
+[ℹ]  setting availability zones to [ap-south-1a ap-south-1c ap-south-1b]
+[ℹ]  subnets <span class="hljs-keyword">for</span> ap-south-1a - public:192.168.0.0/19 private:192.168.96.0/19
+[ℹ]  subnets <span class="hljs-keyword">for</span> ap-south-1c - public:192.168.32.0/19 private:192.168.128.0/19
+[ℹ]  subnets <span class="hljs-keyword">for</span> ap-south-1b - public:192.168.64.0/19 private:192.168.160.0/19
+[ℹ]  nodegroup <span class="hljs-string">&quot;ng-ae09882f&quot;</span> will use <span class="hljs-string">&quot;ami-09c3eb35bb3be46a4&quot;</span> [AmazonLinux2/1.12]
+[ℹ]  creating EKS cluster <span class="hljs-string">&quot;demo-eks-cluster&quot;</span> <span class="hljs-keyword">in</span> <span class="hljs-string">&quot;ap-south-1&quot;</span> region
+[ℹ]  will create 2 separate CloudFormation stacks <span class="hljs-keyword">for</span> cluster itself and the initial nodegroup
+[ℹ]  <span class="hljs-keyword">if</span> you encounter any issues, check CloudFormation console or try <span class="hljs-string">&#x27;eksctl utils describe-stacks --region=ap-south-1 --name=demo-eks-cluster&#x27;</span>
+[ℹ]  2 sequential tasks: { create cluster control plane <span class="hljs-string">&quot;demo-eks-cluster&quot;</span>, create nodegroup <span class="hljs-string">&quot;ng-ae09882f&quot;</span> }
+[ℹ]  building cluster stack <span class="hljs-string">&quot;eksctl-demo-eks-cluster-cluster&quot;</span>
+[ℹ]  deploying stack <span class="hljs-string">&quot;eksctl-demo-eks-cluster-cluster&quot;</span>
+[ℹ]  building nodegroup stack <span class="hljs-string">&quot;eksctl-demo-eks-cluster-nodegroup-ng-ae09882f&quot;</span>
+[ℹ]  --nodes-min=2 was <span class="hljs-built_in">set</span> automatically <span class="hljs-keyword">for</span> nodegroup ng-ae09882f
+[ℹ]  --nodes-max=2 was <span class="hljs-built_in">set</span> automatically <span class="hljs-keyword">for</span> nodegroup ng-ae09882f
+[ℹ]  deploying stack <span class="hljs-string">&quot;eksctl-demo-eks-cluster-nodegroup-ng-ae09882f&quot;</span>
+[✔]  all EKS cluster resource <span class="hljs-keyword">for</span> <span class="hljs-string">&quot;demo-eks-cluster&quot;</span> had been created
+[✔]  saved kubeconfig as <span class="hljs-string">&quot;/Users/Bensooraj/.kube/config&quot;</span>
+[ℹ]  adding role <span class="hljs-string">&quot;arn:aws:iam::account_number:role/eksctl-demo-eks-cluster-nodegroup-NodeInstanceRole-1631FNZJZTDSK&quot;</span> to auth ConfigMap
+[ℹ]  nodegroup <span class="hljs-string">&quot;ng-ae09882f&quot;</span> has 0 node(s)
+[ℹ]  waiting <span class="hljs-keyword">for</span> at least 2 node(s) to become ready <span class="hljs-keyword">in</span> <span class="hljs-string">&quot;ng-ae09882f&quot;</span>
+[ℹ]  nodegroup <span class="hljs-string">&quot;ng-ae09882f&quot;</span> has 2 node(s)
+[ℹ]  node <span class="hljs-string">&quot;ip-192-168-30-190.ap-south-1.compute.internal&quot;</span> is ready
+[ℹ]  node <span class="hljs-string">&quot;ip-192-168-92-207.ap-south-1.compute.internal&quot;</span> is ready
+[ℹ]  kubectl <span class="hljs-built_in">command</span> should work with <span class="hljs-string">&quot;/Users/Bensooraj/.kube/config&quot;</span>, try <span class="hljs-string">&#x27;kubectl get nodes&#x27;</span>
+[✔]  EKS cluster <span class="hljs-string">&quot;demo-eks-cluster&quot;</span> <span class="hljs-keyword">in</span> <span class="hljs-string">&quot;ap-south-1&quot;</span> region is ready
+
+</code></pre>
+<p>We will create a kubernetes <code>Service</code> named <code>mysql-service</code> of type <code>ExternalName</code> aliasing the RDS endpoint <code>demordsmyqldbinstance.cimllxgykuy3.ap-south-1.rds.amazonaws.com</code>.</p>
+<p>Run <code>kubectl apply -f mysql-service.yaml</code> to create the service.</p>
+<pre><code class="hljs language-yaml"><span class="hljs-comment"># mysql-service.yaml</span>
+<span class="hljs-attr">apiVersion:</span> <span class="hljs-string">v1</span>
+<span class="hljs-attr">kind:</span> <span class="hljs-string">Service</span>
+<span class="hljs-attr">metadata:</span>
+  <span class="hljs-attr">labels:</span>
+    <span class="hljs-attr">app:</span> <span class="hljs-string">mysql-service</span>
+  <span class="hljs-attr">name:</span> <span class="hljs-string">mysql-service</span>
+<span class="hljs-attr">spec:</span>
+  <span class="hljs-attr">externalName:</span> <span class="hljs-string">demordsmyqldbinstance.cimllxgykuy3.ap-south-1.rds.amazonaws.com</span>
+  <span class="hljs-attr">selector:</span>
+    <span class="hljs-attr">app:</span> <span class="hljs-string">mysql-service</span>
+  <span class="hljs-attr">type:</span> <span class="hljs-string">ExternalName</span>
+<span class="hljs-attr">status:</span>
+  <span class="hljs-attr">loadBalancer:</span> {}
+</code></pre>
+<p>Now, clients running inside the pods within the cluster can connect to the RDS instance using <code>mysql-service</code>.</p>
+<p>Let&#x27;s test the connect using a throwaway <code>busybox</code> pod:</p>
+<pre><code class="hljs language-sh">$ kubectl run -i --<span class="hljs-built_in">tty</span> --<span class="hljs-built_in">rm</span> debug --image=busybox --restart=Never -- sh
+If you don<span class="hljs-string">&#x27;t see a command prompt, try pressing enter.
+/ # nc mysql-service 3306
+^Cpunt!
+
+</span></code></pre>
+<p>It is evident that the pod is unable to get through! Let&#x27;s solve the problem now.</p>
+<h2>4. Let&#x27;s build the bridge! <a id="lets-build-the-bridge"></a></h2>
+<p>We are going to create a <a href="https://docs.aws.amazon.com/vpc/latest/peering/what-is-vpc-peering.html" class="Markdown_link__M8PUN">VPC Peering Connection</a> to facilitate communication between the resources in the two VPCs. According to the documentation:</p>
+<blockquote>
+<p>A <strong>VPC peering connection</strong> is a networking connection between two VPCs that enables you to route traffic between them using private IPv4 addresses or IPv6 addresses. Instances in either VPC can communicate with each other as if they are within the same network. You can create a VPC peering connection between your own VPCs, or with a VPC in another AWS account. The VPCs can be in different regions (also known as an inter-region VPC peering connection).</p>
+</blockquote>
+<h3>4.1 Create and Accept a VPC Peering Connection <a id="create-and-accept-vpc-peering-connections"></a></h3>
+<p>To create a VPC peering connection, navigate to:</p>
+<ol>
+<li>
+<p>VPC console: https://console.aws.amazon.com/vpc/</p>
+</li>
+<li>
+<p>Select <code>Peering Connections</code> and click on <code>Create Peering Connection</code>.</p>
+</li>
+<li>
+<p>Configure the details as follows (select the EKS VPC as the <code>Requester</code> and the RDS VPC as the <code>Accepter</code>):</p>
+<img class="MDImage_carousel__N8hEe" src="/0/4_5a2ilp9pzgiih073mlvp.png" alt="Configuration" width="100%" height="100%"/>
+</li>
+<li>
+<p>Click on <code>Create Peering Connection</code></p>
+<img class="MDImage_carousel__N8hEe" src="/0/5_9yw3pc84bwo31nihvcvg.jpg" alt="Confirmation page" width="100%" height="100%"/>
+</li>
+<li>
+<p>Select the <code>Peering Connection</code> that we just created. Click on <code>Actions</code> =&gt; <code>Accept</code>. Again, in the confirmation dialog box, click on <code>Yes, Accept</code>.</p>
+<img class="MDImage_carousel__N8hEe" src="/0/6_i3pgejmth4xmhb88fybn.jpg" alt="Yes, Accept" width="100%" height="100%"/>
+</li>
+</ol>
+<p>Don&#x27;t forget to export the VPC Peering Connection ID:</p>
+<pre><code class="hljs language-bash">$ <span class="hljs-built_in">export</span> VPC_PEERING_CONNECTION_ID=pcx-0cc408e65493fe197
+</code></pre>
+<h3>4.2 Update the EKS cluster VPC&#x27;s route table <a id="update-eks-cluster-vpc-route-table"></a></h3>
+<pre><code class="hljs language-sh"><span class="hljs-comment"># Fetch the route table associated with the 3 public subnets of the VPC created by `eksctl`:</span>
+$ aws ec2 describe-route-tables --filters Name=<span class="hljs-string">&quot;tag:aws:cloudformation:logical-id&quot;</span>,Values=<span class="hljs-string">&quot;PublicRouteTable&quot;</span> | jq <span class="hljs-string">&#x27;.RouteTables[0].RouteTableId&#x27;</span>
+<span class="hljs-string">&quot;rtb-06103bd0704b3a9ee&quot;</span>
+
+<span class="hljs-comment"># For easy reference</span>
+<span class="hljs-built_in">export</span> EKS_ROUTE_TABLE_ID=rtb-06103bd0704b3a9ee
+
+<span class="hljs-comment"># Add route: All traffic to (destination) the RDS VPC CIDR block is via the VPC Peering Connection (target)</span>
+$ aws ec2 create-route --route-table-id <span class="hljs-variable">${EKS_ROUTE_TABLE_ID}</span> --destination-cidr-block 10.0.0.0/24 --vpc-peering-connection-id <span class="hljs-variable">${VPC_PEERING_CONNECTION_ID}</span>
+{
+    <span class="hljs-string">&quot;Return&quot;</span>: <span class="hljs-literal">true</span>
+}
+</code></pre>
+<h3>4.3 Update the RDS VPC&#x27;s route table <a id="update-rds-vpc-route-table"></a></h3>
+<pre><code class="hljs language-sh"><span class="hljs-comment"># Add route: All traffic to (destination) the EKS cluster CIDR block is via the VPC Peering Connection (target)</span>
+$ aws ec2 create-route --route-table-id <span class="hljs-variable">${RDS_ROUTE_TABLE_ID}</span> --destination-cidr-block 192.168.0.0/16 --vpc-peering-connection-id <span class="hljs-variable">${VPC_PEERING_CONNECTION_ID}</span>
+{
+    <span class="hljs-string">&quot;Return&quot;</span>: <span class="hljs-literal">true</span>
+}
+</code></pre>
+<h3>4.4 Update the RDS instance&#x27;s security group <a id="update-rds-instance-security-group"></a></h3>
+<p>Allow all ingress traffic from the EKS cluster to the RDS instance on port <code>3306</code>:</p>
+<pre><code class="hljs language-sh">$ aws ec2 authorize-security-group-ingress --group-id <span class="hljs-variable">${RDS_VPC_SECURITY_GROUP_ID}</span> --protocol tcp --port 3306 --cidr 192.168.0.0/16
+</code></pre>
+<h2>5. Test the connection <a id="test-the-connection"></a></h2>
+<pre><code class="hljs language-sh">$ kubectl run -i --<span class="hljs-built_in">tty</span> --<span class="hljs-built_in">rm</span> debug --image=busybox --restart=Never -- sh
+If you don<span class="hljs-string">&#x27;t see a command prompt, try pressing enter.
+/ # nc mysql-service 3306
+N
+5.7.26-logR&amp;=lk`xTH???mj	_5#K)&gt;mysql_native_password
+</span></code></pre>
+<p>We can see that <code>busybox</code> can now successfully talk to the RDS instance using the service <code>mysql-service</code>.</p>
+<p>That said, this is what our final setup looks like:</p>
+<img class="MDImage_carousel__N8hEe" src="/0/7_1ba38e5zu8i36egibtvc.jpeg" alt="Final setup" width="100%" height="100%"/>
+<p><strong>Note</strong>:
+This setup allows all pods in the EKS cluster to access the RDS instance. Depending on your use case, this may or may not be ideal to your architecture. To implement more fine-grained access control, considering setting up a <a href="https://kubernetes.io/docs/concepts/services-networking/network-policies/" class="Markdown_link__M8PUN"><code>NetworkPolicy</code></a> resource.</p>
+<p>Useful resources:</p>
+<ol>
+<li><a href="http://www.davidc.net/sites/default/subnets/subnets.html" class="Markdown_link__M8PUN">Visual Subnet Calculator</a></li>
+<li><a href="https://github.com/stedolan/jq" class="Markdown_link__M8PUN">jq - Command-line JSON processor</a></li>
+<li><a href="https://docs.aws.amazon.com/cli/latest/index.html" class="Markdown_link__M8PUN">AWS CLI Command Reference</a></li>
+<li><a href="https://docs.aws.amazon.com/vpc/latest/peering/what-is-vpc-peering.html" class="Markdown_link__M8PUN">AWS VPC Peering</a></li>
+</ol></main></div></div><script id="__NEXT_DATA__" type="application/json">{"props":{"pageProps":{}},"page":"/blog/0-accessing-amazon-rds-from-aws-eks","query":{},"buildId":"vZF5O8Cp0wJbkUP_UfCYA","assetPrefix":".","nextExport":true,"autoExport":true,"isFallback":false,"scriptLoader":[]}</script></body></html>
