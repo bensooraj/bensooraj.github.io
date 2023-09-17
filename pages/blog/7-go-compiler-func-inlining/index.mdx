@@ -95,7 +95,7 @@ $ objdump --syms expinline_darwin_amd64_no_op_no_inline | grep -E '_main.main|su
 And here's the disassembled code,
 <MDImage src="/7/3_no_opt_no_inline_asm.jpeg" alt="" />
 
-## How
+## How does the compiler do that?
 
 Go's compiler uses a combination of budget and cost to determine whether to inline a function. Every function has a cost compared against a budget (threshold). 
 
@@ -132,7 +132,7 @@ I will also use this example to showcase the two forms of inlining,
 	- Now, non-leaf functions are also eligible for inlining.
 	- For example, in Figure `c`, the function `Sum` is marked with the directive `//go:noinline`, making it non-eligible for inlining. Even though `MidPoint` calls `Sum`, it is allocated a cost of `76`, making it eligible for inlining.
 
-## Why
+## Why inline?
 
 ### Improves performance by minimising the function call overheads
 These overheads include stack manipulation, CPU register loading/unloading, branching, handling return values, etc.
