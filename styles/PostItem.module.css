@@ -1,0 +1,16 @@
+.postItem {
+    display: flex;
+    align-items: center;
+    margin-bottom: -20px; /* Adjusted margin */
+}
+
+.date {
+    text-align: left;
+    margin-right: 10px;
+    color: #555; /* Added color for the date */
+}
+
+.title {
+    text-align: left;
+    font-weight: bold;
+}
