@@ -27,7 +27,7 @@ const nextConfig = {
         path: '',
     },
     optimizeFonts: true,
-    assetPrefix: './',
+    // assetPrefix: './',
 };
 
 export default nextConfig;

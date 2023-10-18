@@ -1,24 +1,101 @@
+/* Normalize base styles for all elements */
+body {
+  font-family: Arial, sans-serif;
+  color: #333;
+  line-height: 1.6;
+  margin: 0;
+  padding: 0;
+}
+
+/* Link styling */
 a {
   color: inherit;
-  text-decoration: underline transparent;
-  transition: 0.25s ease-in-out;
+  text-decoration: none;
+  transition: color 0.25s ease-in-out;
 }
 
 a:hover {
-  text-decoration-color: currentColor;
+  color: #000;
+  /* Slightly darker blue on hover */
 }
 
+/* Container for article content */
 .max-width-container {
-  max-width: 750px;
-  margin-left: auto;
-  margin-right: auto;
-  padding: 0 10px;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  /* Added padding */
 }
 
 .max-width-container.main {
   padding: 50px 30px;
 }
 
-p {
-  line-height: 1.6;
+/* Headings */
+h1,
+h2,
+h3 {
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+h1 {
+  font-size: 2em;
+}
+
+h2 {
+  font-size: 1.5em;
+}
+
+h3 {
+  font-size: 1.2em;
+}
+
+/* Paragraphs and general text */
+p,
+ul,
+ol {
+  margin-bottom: 15px;
+}
+
+/* Code blocks */
+pre {
+  background-color: #f8f9fa;
+  /* Light gray background for code blocks */
+  border: 1px solid #d6d8db;
+  border-radius: 4px;
+  padding: 5px;
+  overflow-x: auto;
+  font-size: 0.9em;
+}
+
+code {
+  font-family: Consolas, monospace;
+  color: #333;
+}
+
+/* Blockquotes */
+blockquote {
+  background-color: #f8f9fa;
+  /* Light gray background for blockquotes */
+  border-left: 4px solid #007bff;
+  /* Blue border on the left */
+  padding: 10px;
+  margin: 0;
+}
+
+/* Images */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  /* Center images */
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 768px) {
+  .article-container {
+    padding: 10px;
+  }
 }
