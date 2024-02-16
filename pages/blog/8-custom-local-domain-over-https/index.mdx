@@ -1,0 +1,51 @@
+---
+title: "Custom Local Domain over HTTPS"
+date: "2023-09-18T10:00:00+05:30"
+draft: false
+tags:
+  - docker
+  - nginx
+---
+
+# Custom Local Domain over HTTPS
+
+## Note
+This is a documention for my own reference, so I can come back to it in the future either for setting up a new custom local domain over HTTPS using `docker` and `nginx`, or reverting back to the original state.
+
+## Steps
+### mkcert
+Install mkcert:
+```bash
+# MacOS
+$ brew install mkcert
+
+# Create and install a local certificate authority (CA), trusted locally on your device.
+$ mkcert -install
+
+# List the root CA files.
+$ ls "$(mkcert -CAROOT)"
+rootCA-key.pem rootCA.pem
+
+# Create a trusted certificate.
+$ mkdir potato_cld && cd potato_cld
+$ mkcert potato.cld "*.potato.cld"
+
+Created a new certificate valid for the following names 📜
+ - "potato.cld"
+ - "*.potato.cld"
+
+Reminder: X.509 wildcards only go one level deep, so this won\'t match a.b.potato.cld
+
+The certificate is at "./potato.cld+1.pem" and the key at "./potato.cld+1-key.pem" ✅
+
+It will expire on 11 May 2026 🗓
+```
+
+The command `mkcert potato.cld "*.potato.cld"` above does two things:
+1. Generates a certificate for the hostname you've specified
+2. Lets `mkcert` (that you've added as a local CA) sign this certificate.
+
+Now, the certificate is ready and signed by a certificate authority that the browser trusts locally.
+
+## References
+1. [How to use HTTPS for local development](https://web.dev/articles/how-to-use-local-https)
