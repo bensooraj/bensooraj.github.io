@@ -176,7 +176,78 @@ resolver #8
   reach         : 0x00030002 (Reachable,Local Address,Directly Reachable Address)
 ```
 
+## Docker and Nginx
+
+Clone the git repository and start the docker containers:
+```bash
+$ git clone https://github.com/bensooraj/blog-artefact-custom-local-domain.git
+$ docker-compose up -d
+
+$ curl https://api.potato.cld/ok 
+200 OK: api.potato.cld
+
+$ curl https://api2.potato.cld/ok
+200 OK: api2.potato.cld
+
+$ docker ps -a
+
+CONTAINER ID   IMAGE                   COMMAND                  CREATED         STATUS         PORTS                                      NAMES
+ef88c504a751   nginx:latest            "/docker-entrypoint.…"   2 minutes ago   Up 2 minutes   0.0.0.0:80->80/tcp, 0.0.0.0:443->443/tcp   nginx
+39651f26920c   one_tls_whoami-goapi    "./server"               2 minutes ago   Up 2 minutes   8080/tcp, 0.0.0.0:8080->443/tcp            one_tls_whoami-goapi-1
+a98caad7d4cb   one_tls_whoami-goapi2   "./server"               2 minutes ago   Up 2 minutes   8080/tcp, 0.0.0.0:8081->443/tcp            one_tls_whoami-goapi2-1
+
+$ docker logs nginx --tail=2
+192.168.65.1 - - [15/Feb/2024:09:54:17 +0000] "GET /ok HTTP/1.1" 200 23 "-" "curl/8.1.2" "-"
+192.168.65.1 - - [15/Feb/2024:09:54:18 +0000] "GET /ok HTTP/1.1" 200 24 "-" "curl/8.1.2" "-"
+
+$ docker logs one_tls_whoami-goapi-1 --tail=2
+2024/02/15 09:54:09 INFO server started on localhost. protocol=https port=443
+2024/02/15 09:54:17 INFO Header:  X-API-ServerName=api.potato.cld
+
+$ docker logs one_tls_whoami-goapi2-1 --tail=2                       
+2024/02/15 09:54:09 INFO server started on localhost. protocol=https port=443
+2024/02/15 09:54:18 INFO Header:  X-API-ServerName=api2.potato.cld
+```
+
+Explore the `nginx` configuration files:
+```bash
+$ cat nginx/conf/api2_potato_cld.conf
+
+server {
+	listen 80;
+	listen [::]:80;
+	server_name api2.potato.cld;
+
+	return 301 https://api2.potato.cld$request_uri;
+}
+
+server {
+	listen 443 ssl;
+	listen [::]:443 ssl;
+
+	server_name api2.potato.cld;
+
+	ssl_certificate /etc/nginx/ssl/potato.cld.pem;
+	ssl_certificate_key /etc/nginx/ssl/potato.cld-key.pem;
+
+	# If they come here using HTTP, bounce them to the correct scheme
+	error_page 497 https://$server_name:$server_port$request_uri;
+
+	error_log /dev/stderr;
+	access_log /dev/stdout main;
+
+	location / {
+		proxy_set_header X-API-ServerName $server_name;
+		proxy_set_header X-Forwarded-For $remote_addr;
+		proxy_set_header Host $http_host;
+		proxy_pass https://host.docker.internal:8081;
+	}
+}
+```
+
+
 
 ## References
 1. [How to use HTTPS for local development](https://web.dev/articles/how-to-use-local-https)
 2. [macOS: Using Custom DNS Resolvers](https://vninja.net/2020/02/06/macos-custom-dns-resolvers/)
+3. [Mastering NGINX Logs in Docker: From Novice to Ninja](https://karandeepsingh.ca/post/nginx-logs-and-docker-your-ultimate-guide/)
