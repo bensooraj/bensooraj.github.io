@@ -66,7 +66,7 @@ The simplest way to go about this is to update the `/etc/hosts` as shown below,
 
 But that is too simple. Let's crank up the complexity so I can learn something new - `dnsmasq`.
 
-#### 2. `dnsmasq`
+#### 2. Install, configure and start the `dnsmasq`server
 
 > `dnsmasq` is a lightweight DNS, TFTP, PXE, router advertisement and DHCP server. It is intended to provide coupled DNS and DHCP service to a LAN.
 > 
@@ -129,5 +129,54 @@ dnsmasq started root /Library/LaunchDaemons/homebrew.mxcl.dnsmasq.plist
 unbound none
 ```
 
+#### 3. Configure `resolv.conf`
+
+Configure the DNS server to be used for the domain `potato.cld`:
+```shell
+# Make a new folder called /etc/resolver/, if it doesn't exist
+$ sudo mkdir -p /etc/resolver/
+# Create a new file with the name of the domain you want custom DNS settings for
+$ touch /etc/resolver/potato.cld
+# Set the nameserver that the domain should resolve to
+$ sudo tee /etc/resolver/potato.cld >/dev/null <<EOF
+nameserver 127.0.0.1
+EOF
+
+# restart local dnsmasq service
+$ sudo brew services restart dnsmasq
+Stopping `dnsmasq`... (might take a while)
+
+==> **Successfully stopped `dnsmasq` (label: homebrew.mxcl.dnsmasq)**
+Warning: Taking root:admin ownership of some dnsmasq paths:
+  /opt/homebrew/Cellar/dnsmasq/2.90/sbin
+  /opt/homebrew/Cellar/dnsmasq/2.90/sbin/dnsmasq
+  /opt/homebrew/opt/dnsmasq
+  /opt/homebrew/opt/dnsmasq/sbin
+  /opt/homebrew/var/homebrew/linked/dnsmasq
+This will require manual removal of these paths using `sudo rm` on
+brew upgrade/reinstall/uninstall.
+==> **Successfully started `dnsmasq` (label: homebrew.mxcl.dnsmasq)**
+```
+
+### Verify
+```bash
+$ dscacheutil -q host -a name potato.cld
+
+name: potato.cld
+ip_address: 127.0.0.1
+
+# Verify the new resolver was picked up
+$ scutil --dns
+DNS configuration
+
+resolver #8
+  domain        : potato.cld
+  nameserver[0] : 127.0.0.1
+  flags         : Request A records, Request AAAA records
+  reach         : 0x00030002 (Reachable,Local Address,Directly Reachable Address)
+```
+
+
 ## References
 1. [How to use HTTPS for local development](https://web.dev/articles/how-to-use-local-https)
+2. [macOS: Using Custom DNS Resolvers](https://vninja.net/2020/02/06/macos-custom-dns-resolvers/)
