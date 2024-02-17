@@ -1,0 +1,226 @@
+<!DOCTYPE html><html lang="en"><head><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.4.0/styles/github-dark.min.css"/><meta charSet="utf-8"/><meta name="viewport" content="width=device-width"/><meta name="next-head-count" content="2"/><link rel="preload" href="/_next/static/css/2c09a92627824155.css" as="style"/><link rel="stylesheet" href="/_next/static/css/2c09a92627824155.css" data-n-g=""/><noscript data-n-css=""></noscript><script defer="" nomodule="" src="/_next/static/chunks/polyfills-5cd94c89d3acac5f.js"></script><script src="/_next/static/chunks/webpack-514908bffb652963.js" defer=""></script><script src="/_next/static/chunks/framework-91d7f78b5b4003c8.js" defer=""></script><script src="/_next/static/chunks/main-7e73d61bce33e887.js" defer=""></script><script src="/_next/static/chunks/pages/_app-e6ebfa373a417a20.js" defer=""></script><script src="/_next/static/chunks/pages/blog/8-custom-local-domain-over-https-8cc27033a1e6c3e4.js" defer=""></script><script src="/_next/static/BRM0gA6rfyS_ajMbv-1jH/_buildManifest.js" defer=""></script><script src="/_next/static/BRM0gA6rfyS_ajMbv-1jH/_ssgManifest.js" defer=""></script><script src="/_next/static/BRM0gA6rfyS_ajMbv-1jH/_middlewareManifest.js" defer=""></script></head><body><div id="__next" data-reactroot=""><div><header class="Header_header__VYZ3G"><div class="max-width-container"><h2><a href="/">Ben Sooraj</a></h2><ul><li><a href="/about">About</a></li><li><a href="/blog">Blog</a></li></ul></div></header><main class="max-width-container main"><h1 class="Markdown_postTitle__HEeQS">Custom Local Domain over HTTPS</h1>
+<h2>Note</h2>
+<p>This is a documention for my own reference, so I can come back to it in the future either for setting up a new custom local domain over HTTPS using <code>docker</code> and <code>nginx</code>, or reverting back to the original state.</p>
+<h2>Steps</h2>
+<h3>mkcert</h3>
+<p>Install mkcert:</p>
+<pre><code class="hljs language-bash"><span class="hljs-comment"># MacOS</span>
+$ brew install mkcert
+
+<span class="hljs-comment"># Create and install a local certificate authority (CA), trusted locally on your device.</span>
+$ mkcert -install
+
+<span class="hljs-comment"># List the root CA files.</span>
+$ <span class="hljs-built_in">ls</span> <span class="hljs-string">&quot;<span class="hljs-subst">$(mkcert -CAROOT)</span>&quot;</span>
+rootCA-key.pem rootCA.pem
+
+<span class="hljs-comment"># Create a trusted certificate.</span>
+$ <span class="hljs-built_in">mkdir</span> potato_cld &amp;&amp; <span class="hljs-built_in">cd</span> potato_cld
+$ mkcert potato.cld <span class="hljs-string">&quot;*.potato.cld&quot;</span>
+
+Created a new certificate valid <span class="hljs-keyword">for</span> the following names 📜
+ - <span class="hljs-string">&quot;potato.cld&quot;</span>
+ - <span class="hljs-string">&quot;*.potato.cld&quot;</span>
+
+Reminder: X.509 wildcards only go one level deep, so this won\<span class="hljs-string">&#x27;t match a.b.potato.cld
+
+The certificate is at &quot;./potato.cld+1.pem&quot; and the key at &quot;./potato.cld+1-key.pem&quot; ✅
+
+It will expire on 11 May 2026 🗓
+</span></code></pre>
+<p>The command <code>mkcert potato.cld &quot;*.potato.cld&quot;</code> above does two things:</p>
+<ol>
+<li>Generates a certificate for the hostname you&#x27;ve specified</li>
+<li>Lets <code>mkcert</code> (that you&#x27;ve added as a local CA) sign this certificate.</li>
+</ol>
+<p>Now, the certificate is ready and signed by a certificate authority that the browser trusts locally.</p>
+<h3>Configure DNS</h3>
+<h4>1. Modify <code>/etc/hosts</code></h4>
+<p>The simplest way to go about this is to update the <code>/etc/hosts</code> as shown below,</p>
+<pre><code class="hljs language-bash"><span class="hljs-comment">##</span>
+<span class="hljs-comment"># Host Database</span>
+<span class="hljs-comment">#</span>
+<span class="hljs-comment"># localhost is used to configure the loopback interface</span>
+<span class="hljs-comment"># when the system is booting.  Do not change this entry.</span>
+<span class="hljs-comment">##</span>
+127.0.0.1	      localhost
+255.255.255.255	broadcasthost
+::1             localhost
+
+127.0.0.1       potato.cld api.potato.cld api2.potato.cld
+</code></pre>
+<p>But that is too simple. Let&#x27;s crank up the complexity so I can learn something new - <code>dnsmasq</code>.</p>
+<h4>2. Install, configure and start the <code>dnsmasq</code>server</h4>
+<blockquote>
+<p><code>dnsmasq</code> is a lightweight DNS, TFTP, PXE, router advertisement and DHCP server. It is intended to provide coupled DNS and DHCP service to a LAN.</p>
+<p>Dnsmasq accepts DNS queries and either answers them from a small, local, cache or forwards them to a real, recursive, DNS server. It loads the contents of /etc/hosts so that local hostnames which do not appear in the global DNS can be resolved and also answers DNS queries for DHCP configured hosts. It can also act as the authoritative DNS server for one or more domains, allowing local names to appear in the global DNS. ...
+<em>source</em>: <code>man dnsmasq</code></p>
+</blockquote>
+<pre><code class="hljs language-bash"><span class="hljs-comment"># Install</span>
+$ brew install dnsmasq
+$ brew list dnsmasq
+/opt/homebrew/Cellar/dnsmasq/2.90/.bottle/etc/dnsmasq.conf
+/opt/homebrew/Cellar/dnsmasq/2.90/homebrew.dnsmasq.service
+/opt/homebrew/Cellar/dnsmasq/2.90/homebrew.mxcl.dnsmasq.plist
+/opt/homebrew/Cellar/dnsmasq/2.90/sbin/dnsmasq
+/opt/homebrew/Cellar/dnsmasq/2.90/share/man/man8/dnsmasq.8
+
+<span class="hljs-comment"># Create a new directory and a `.conf` file:</span>
+$ <span class="hljs-built_in">mkdir</span> -p /Users/bsm/Development/dnsmasq.d
+$ <span class="hljs-built_in">touch</span> /Users/bsm/Development/dnsmasq.d/dnsmasq.conf
+</code></pre>
+<p>We will now uncomment and update the value of <code>conf-dir=</code> in <code>/opt/homebrew/etc/dnsmasq.conf</code> to point to <code>dnsmasq.conf</code> file we created above.</p>
+<pre><code class="hljs language-bash">% <span class="hljs-built_in">cat</span> $(brew --prefix)/etc/dnsmasq.conf | grep conf-dir
+<span class="hljs-comment">#conf-dir=/opt/homebrew/etc/dnsmasq.d</span>
+conf-dir=/Users/bsm/Development/dnsmasq.d/,*.conf
+<span class="hljs-comment">#conf-dir=/opt/homebrew/etc/dnsmasq.d,.bak</span>
+<span class="hljs-comment">#conf-dir=/opt/homebrew/etc/dnsmasq.d/,*.conf</span>
+</code></pre>
+<p>Next, edit <code>/Users/bsm/Development/dnsmasq.d/dnsmasq.conf</code> and add the line <code>address=/potato.cld/127.0.0.1</code>.</p>
+<pre><code class="hljs language-bash">$ <span class="hljs-built_in">cat</span> /Users/bensoorajmohan/Development/dnsmasq.d/dnsmasq.conf 
+address=/potato.cld/127.0.0.1
+
+</code></pre>
+<p>Now,</p>
+<pre><code class="hljs language-bash"><span class="hljs-comment"># start the `dnsmasq` service:</span>
+$ sudo brew services start dnsmasq
+
+Warning: Taking root:admin ownership of some dnsmasq paths:
+  /opt/homebrew/Cellar/dnsmasq/2.90/sbin
+  /opt/homebrew/Cellar/dnsmasq/2.90/sbin/dnsmasq
+  /opt/homebrew/opt/dnsmasq
+  /opt/homebrew/opt/dnsmasq/sbin
+  /opt/homebrew/var/homebrew/linked/dnsmasq
+
+This will require manual removal of these paths using `sudo <span class="hljs-built_in">rm</span>` on
+brew upgrade/reinstall/uninstall.
+==&gt; **Successfully started `dnsmasq` (label: homebrew.mxcl.dnsmasq)**
+
+<span class="hljs-comment"># verify that the service is running:</span>
+$ sudo brew services
+**Name  Status  User File**
+black   none         
+dnsmasq started root /Library/LaunchDaemons/homebrew.mxcl.dnsmasq.plist
+unbound none
+</code></pre>
+<h4>3. Configure <code>resolv.conf</code></h4>
+<p>Configure the DNS server to be used for the domain <code>potato.cld</code>:</p>
+<pre><code class="hljs language-shell"><span class="hljs-meta prompt_"># </span><span class="bash">Make a new folder called /etc/resolver/, <span class="hljs-keyword">if</span> it doesn<span class="hljs-string">&#x27;t exist</span></span>
+<span class="hljs-meta prompt_">$ </span><span class="bash"><span class="hljs-string">sudo mkdir -p /etc/resolver/</span></span>
+<span class="hljs-meta prompt_"># </span><span class="bash"><span class="hljs-string">Create a new file with the name of the domain you want custom DNS settings for</span></span>
+<span class="hljs-meta prompt_">$ </span><span class="bash"><span class="hljs-string">touch /etc/resolver/potato.cld</span></span>
+<span class="hljs-meta prompt_"># </span><span class="bash"><span class="hljs-string">Set the nameserver that the domain should resolve to</span></span>
+<span class="hljs-meta prompt_">$ </span><span class="bash"><span class="hljs-string">sudo tee /etc/resolver/potato.cld &gt;/dev/null &lt;&lt;EOF</span></span>
+nameserver 127.0.0.1
+EOF
+<span class="hljs-meta prompt_">
+# </span><span class="bash"><span class="hljs-string">restart local dnsmasq service</span></span>
+<span class="hljs-meta prompt_">$ </span><span class="bash"><span class="hljs-string">sudo brew services restart dnsmasq</span></span>
+Stopping `dnsmasq`... (might take a while)
+
+==&gt; **Successfully stopped `dnsmasq` (label: homebrew.mxcl.dnsmasq)**
+Warning: Taking root:admin ownership of some dnsmasq paths:
+  /opt/homebrew/Cellar/dnsmasq/2.90/sbin
+  /opt/homebrew/Cellar/dnsmasq/2.90/sbin/dnsmasq
+  /opt/homebrew/opt/dnsmasq
+  /opt/homebrew/opt/dnsmasq/sbin
+  /opt/homebrew/var/homebrew/linked/dnsmasq
+This will require manual removal of these paths using `sudo rm` on
+brew upgrade/reinstall/uninstall.
+==&gt; **Successfully started `dnsmasq` (label: homebrew.mxcl.dnsmasq)**
+</code></pre>
+<h3>Verify</h3>
+<pre><code class="hljs language-bash">$ dscacheutil -q host -a name potato.cld
+
+name: potato.cld
+ip_address: 127.0.0.1
+
+<span class="hljs-comment"># Verify the new resolver was picked up</span>
+$ scutil --dns
+DNS configuration
+
+resolver <span class="hljs-comment">#8</span>
+  domain        : potato.cld
+  nameserver[0] : 127.0.0.1
+  flags         : Request A records, Request AAAA records
+  reach         : 0x00030002 (Reachable,Local Address,Directly Reachable Address)
+</code></pre>
+<h2>Docker and Nginx</h2>
+<p>Clone the git repository and start the docker containers:</p>
+<pre><code class="hljs language-bash">$ git <span class="hljs-built_in">clone</span> https://github.com/bensooraj/blog-artefact-custom-local-domain.git
+$ docker-compose up -d
+
+$ curl https://api.potato.cld/ok 
+200 OK: api.potato.cld
+
+$ curl https://api2.potato.cld/ok
+200 OK: api2.potato.cld
+
+$ docker ps -a
+
+CONTAINER ID   IMAGE                   COMMAND                  CREATED         STATUS         PORTS                                      NAMES
+ef88c504a751   nginx:latest            <span class="hljs-string">&quot;/docker-entrypoint.…&quot;</span>   2 minutes ago   Up 2 minutes   0.0.0.0:80-&gt;80/tcp, 0.0.0.0:443-&gt;443/tcp   nginx
+39651f26920c   one_tls_whoami-goapi    <span class="hljs-string">&quot;./server&quot;</span>               2 minutes ago   Up 2 minutes   8080/tcp, 0.0.0.0:8080-&gt;443/tcp            one_tls_whoami-goapi-1
+a98caad7d4cb   one_tls_whoami-goapi2   <span class="hljs-string">&quot;./server&quot;</span>               2 minutes ago   Up 2 minutes   8080/tcp, 0.0.0.0:8081-&gt;443/tcp            one_tls_whoami-goapi2-1
+
+$ docker logs nginx --<span class="hljs-built_in">tail</span>=2
+192.168.65.1 - - [15/Feb/2024:09:54:17 +0000] <span class="hljs-string">&quot;GET /ok HTTP/1.1&quot;</span> 200 23 <span class="hljs-string">&quot;-&quot;</span> <span class="hljs-string">&quot;curl/8.1.2&quot;</span> <span class="hljs-string">&quot;-&quot;</span>
+192.168.65.1 - - [15/Feb/2024:09:54:18 +0000] <span class="hljs-string">&quot;GET /ok HTTP/1.1&quot;</span> 200 24 <span class="hljs-string">&quot;-&quot;</span> <span class="hljs-string">&quot;curl/8.1.2&quot;</span> <span class="hljs-string">&quot;-&quot;</span>
+
+$ docker logs one_tls_whoami-goapi-1 --<span class="hljs-built_in">tail</span>=2
+2024/02/15 09:54:09 INFO server started on localhost. protocol=https port=443
+2024/02/15 09:54:17 INFO Header:  X-API-ServerName=api.potato.cld
+
+$ docker logs one_tls_whoami-goapi2-1 --<span class="hljs-built_in">tail</span>=2                       
+2024/02/15 09:54:09 INFO server started on localhost. protocol=https port=443
+2024/02/15 09:54:18 INFO Header:  X-API-ServerName=api2.potato.cld
+</code></pre>
+<p>Explore the <code>nginx</code> configuration files:</p>
+<pre><code class="hljs language-bash">$ <span class="hljs-built_in">cat</span> nginx/conf/api2_potato_cld.conf
+
+server {
+	listen 80;
+	listen [::]:80;
+	server_name api2.potato.cld;
+
+	<span class="hljs-built_in">return</span> 301 https://api2.potato.cld<span class="hljs-variable">$request_uri</span>;
+}
+
+server {
+	listen 443 ssl;
+	listen [::]:443 ssl;
+
+	server_name api2.potato.cld;
+
+	ssl_certificate /etc/nginx/ssl/potato.cld.pem;
+	ssl_certificate_key /etc/nginx/ssl/potato.cld-key.pem;
+
+	<span class="hljs-comment"># If they come here using HTTP, bounce them to the correct scheme</span>
+	error_page 497 https://<span class="hljs-variable">$server_name</span>:$server_port<span class="hljs-variable">$request_uri</span>;
+
+	error_log /dev/stderr;
+	access_log /dev/stdout main;
+
+	location / {
+		proxy_set_header X-API-ServerName <span class="hljs-variable">$server_name</span>;
+		proxy_set_header X-Forwarded-For <span class="hljs-variable">$remote_addr</span>;
+		proxy_set_header Host <span class="hljs-variable">$http_host</span>;
+		proxy_pass https://host.docker.internal:8081;
+	}
+}
+</code></pre>
+<h2>References</h2>
+<ol>
+<li><a href="https://web.dev/articles/how-to-use-local-https" class="Markdown_link__M8PUN">How to use HTTPS for local development</a></li>
+<li><a href="https://vninja.net/2020/02/06/macos-custom-dns-resolvers/" class="Markdown_link__M8PUN">macOS: Using Custom DNS Resolvers</a></li>
+<li><a href="https://karandeepsingh.ca/post/nginx-logs-and-docker-your-ultimate-guide/" class="Markdown_link__M8PUN">Mastering NGINX Logs in Docker: From Novice to Ninja</a></li>
+<li><a href="https://dev.to/timtsoitt/how-to-resolve-local-wildcard-domains-in-macos-h5e" class="Markdown_link__M8PUN">How to create local wildcard domains in MacOS using dnsmasq?</a></li>
+<li><a href="https://gist.github.com/ogrrd/5831371" class="Markdown_link__M8PUN">Gist: Never touch your local /etc/hosts file in OS X again</a></li>
+<li><a href="https://stackoverflow.com/questions/50914268/os-x-etc-resolver-dev-isnt-working-why-not" class="Markdown_link__M8PUN">OS/X &quot;etc/resolver/dev&quot; isn&#x27;t working - why not?</a></li>
+<li><a href="https://passingcuriosity.com/2013/dnsmasq-dev-osx/" class="Markdown_link__M8PUN">Using Dnsmasq for local development on OS X</a></li>
+<li><a href="https://medium.com/@TomVance/local-domains-with-https-469036775818" class="Markdown_link__M8PUN">Local domains with HTTPS and Docker compose</a></li>
+<li><a href="https://betterprogramming.pub/docker-powered-web-development-utilizing-https-and-local-domain-names-a57f129e1c4d" class="Markdown_link__M8PUN">Docker-Powered Web Development Utilizing HTTPS and Local Domain Names</a></li>
+<li><a href="https://emmapopoola.medium.com/setting-up-a-custom-domain-for-your-local-apps-mac-os-linux-c68798722143" class="Markdown_link__M8PUN">Setting up a custom domain for your local apps (Mac OS &amp; Linux)</a></li>
+<li><a href="https://umasrinivask.medium.com/configure-nginx-as-a-reverse-proxy-with-docker-compose-file-4ebba2b75c89" class="Markdown_link__M8PUN">Configure NGINX as a Reverse Proxy with Docker Compose file</a></li>
+<li><a href="https://stevessmarthomeguide.com/home-network-dns-dnsmasq/" class="Markdown_link__M8PUN">How to Setup a Local DNS Server Using DNSMasq</a></li>
+</ol></main></div></div><script id="__NEXT_DATA__" type="application/json">{"props":{"pageProps":{}},"page":"/blog/8-custom-local-domain-over-https","query":{},"buildId":"BRM0gA6rfyS_ajMbv-1jH","nextExport":true,"autoExport":true,"isFallback":false,"scriptLoader":[]}</script></body></html>
