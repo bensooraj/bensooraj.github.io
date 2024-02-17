@@ -46,6 +46,88 @@ The command `mkcert potato.cld "*.potato.cld"` above does two things:
 2. Lets `mkcert` (that you've added as a local CA) sign this certificate.
 
 Now, the certificate is ready and signed by a certificate authority that the browser trusts locally.
+### Configure DNS
+#### 1. Modify `/etc/hosts`
+
+The simplest way to go about this is to update the `/etc/hosts` as shown below,
+```bash
+##
+# Host Database
+#
+# localhost is used to configure the loopback interface
+# when the system is booting.  Do not change this entry.
+##
+127.0.0.1	      localhost
+255.255.255.255	broadcasthost
+::1             localhost
+
+127.0.0.1       potato.cld api.potato.cld api2.potato.cld
+```
+
+But that is too simple. Let's crank up the complexity so I can learn something new - `dnsmasq`.
+
+#### 2. `dnsmasq`
+
+> `dnsmasq` is a lightweight DNS, TFTP, PXE, router advertisement and DHCP server. It is intended to provide coupled DNS and DHCP service to a LAN.
+> 
+> Dnsmasq accepts DNS queries and either answers them from a small, local, cache or forwards them to a real, recursive, DNS server. It loads the contents of /etc/hosts so that local hostnames which do not appear in the global DNS can be resolved and also answers DNS queries for DHCP configured hosts. It can also act as the authoritative DNS server for one or more domains, allowing local names to appear in the global DNS. ...
+> _source_: `man dnsmasq`
+
+```bash
+# Install
+$ brew install dnsmasq
+$ brew list dnsmasq
+/opt/homebrew/Cellar/dnsmasq/2.90/.bottle/etc/dnsmasq.conf
+/opt/homebrew/Cellar/dnsmasq/2.90/homebrew.dnsmasq.service
+/opt/homebrew/Cellar/dnsmasq/2.90/homebrew.mxcl.dnsmasq.plist
+/opt/homebrew/Cellar/dnsmasq/2.90/sbin/dnsmasq
+/opt/homebrew/Cellar/dnsmasq/2.90/share/man/man8/dnsmasq.8
+
+# Create a new directory and a `.conf` file:
+$ mkdir -p /Users/bsm/Development/dnsmasq.d
+$ touch /Users/bsm/Development/dnsmasq.d/dnsmasq.conf
+```
+
+We will now uncomment and update the value of `conf-dir=` in `/opt/homebrew/etc/dnsmasq.conf` to point to `dnsmasq.conf` file we created above.
+
+```bash
+% cat $(brew --prefix)/etc/dnsmasq.conf | grep conf-dir
+#conf-dir=/opt/homebrew/etc/dnsmasq.d
+conf-dir=/Users/bsm/Development/dnsmasq.d/,*.conf
+#conf-dir=/opt/homebrew/etc/dnsmasq.d,.bak
+#conf-dir=/opt/homebrew/etc/dnsmasq.d/,*.conf
+```
+
+Next, edit `/Users/bsm/Development/dnsmasq.d/dnsmasq.conf` and add the line `address=/potato.cld/127.0.0.1`.
+```bash
+$ cat /Users/bensoorajmohan/Development/dnsmasq.d/dnsmasq.conf 
+address=/potato.cld/127.0.0.1
+
+```
+
+Now,
+```bash
+# start the `dnsmasq` service:
+$ sudo brew services start dnsmasq
+
+Warning: Taking root:admin ownership of some dnsmasq paths:
+  /opt/homebrew/Cellar/dnsmasq/2.90/sbin
+  /opt/homebrew/Cellar/dnsmasq/2.90/sbin/dnsmasq
+  /opt/homebrew/opt/dnsmasq
+  /opt/homebrew/opt/dnsmasq/sbin
+  /opt/homebrew/var/homebrew/linked/dnsmasq
+
+This will require manual removal of these paths using `sudo rm` on
+brew upgrade/reinstall/uninstall.
+==> **Successfully started `dnsmasq` (label: homebrew.mxcl.dnsmasq)**
+
+# verify that the service is running:
+$ sudo brew services
+**Name  Status  User File**
+black   none         
+dnsmasq started root /Library/LaunchDaemons/homebrew.mxcl.dnsmasq.plist
+unbound none
+```
 
 ## References
 1. [How to use HTTPS for local development](https://web.dev/articles/how-to-use-local-https)
