@@ -1,39 +1,39 @@
----
-name: Build and Deploy
+# ---
+# name: Build and Deploy
 
-on:
-  push:
-    branches:
-      - v2
+# on:
+#   push:
+#     branches:
+#       - v2
 
-permissions:
-  contents: write
+# permissions:
+#   contents: write
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
+# jobs:
+#   build:
+#     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [18.x]
+#     strategy:
+#       matrix:
+#         node-version: [18.x]
 
-    steps:
-      - name: checkout code
-        uses: actions/checkout@v3
+#     steps:
+#       - name: checkout code
+#         uses: actions/checkout@v3
 
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'npm'
+#       - name: Use Node.js ${{ matrix.node-version }}
+#         uses: actions/setup-node@v3
+#         with:
+#           node-version: ${{ matrix.node-version }}
+#           cache: 'npm'
 
-      - name: Install and Build
-        run: |
-          npm ci
-          npm run build
+#       - name: Install and Build
+#         run: |
+#           npm ci
+#           npm run build
 
-      - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          branch: v2-gh-pages
-          folder: out
+#       - name: Deploy 🚀
+#         uses: JamesIves/github-pages-deploy-action@v4
+#         with:
+#           branch: v2-gh-pages
+#           folder: out
