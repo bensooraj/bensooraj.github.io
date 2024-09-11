@@ -1,10 +1,14 @@
 import * as React from 'react'
-import { Outlet, createRootRoute } from '@tanstack/react-router'
+import { Link, Outlet, createRootRoute } from '@tanstack/react-router'
 
 export const Route = createRootRoute({
   component: () => (
     <React.Fragment>
-      <div>Hello "__root"!</div>
+      <div className="flex gap-2 p-2">
+        <Link to="/" className="no-underline">
+          {({ isActive }) => <>{isActive && "{"} Home {isActive && "}"}</>}
+        </Link>{' '}
+      </div>
       <Outlet />
     </React.Fragment>
   ),
