@@ -4,6 +4,9 @@ import react from '@vitejs/plugin-react'
 import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
 import mdx from '@mdx-js/rollup'
 
+// Custom plugins
+import { Galilee } from './src/vite-custom-plugins/galilee'
+
 // Remark plugins
 import remarkFrontmatter from 'remark-frontmatter'
 
@@ -14,6 +17,7 @@ import rehypeShiki from '@shikijs/rehype'
 export default defineConfig({
   plugins: [
     TanStackRouterVite(),
+    Galilee(),
     {
       enforce: 'pre',
       ...mdx({

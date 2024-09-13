@@ -1,0 +1,30 @@
+[
+  {
+    "content": "The empty interface and the empty struct in golang",
+    "slug": "the-empty-interface-and-the-empty-struct-in-golang",
+    "lvl": 1,
+    "i": 0,
+    "seen": 0
+  },
+  {
+    "content": "Empty interface",
+    "slug": "empty-interface",
+    "lvl": 2,
+    "i": 1,
+    "seen": 0
+  },
+  {
+    "content": "Empty struct",
+    "slug": "empty-struct",
+    "lvl": 2,
+    "i": 2,
+    "seen": 0
+  },
+  {
+    "content": "Resources:",
+    "slug": "resources",
+    "lvl": 2,
+    "i": 3,
+    "seen": 0
+  }
+]

@@ -1,0 +1,30 @@
+[
+  {
+    "content": "Struct aggregation and embedding in golang",
+    "slug": "struct-aggregation-and-embedding-in-golang",
+    "lvl": 1,
+    "i": 0,
+    "seen": 0
+  },
+  {
+    "content": "Nested Structs",
+    "slug": "nested-structs",
+    "lvl": 2,
+    "i": 1,
+    "seen": 0
+  },
+  {
+    "content": "Struct Aggregation",
+    "slug": "struct-aggregation",
+    "lvl": 3,
+    "i": 2,
+    "seen": 0
+  },
+  {
+    "content": "Struct Embedding",
+    "slug": "struct-embedding",
+    "lvl": 3,
+    "i": 3,
+    "seen": 0
+  }
+]
