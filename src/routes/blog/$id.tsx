@@ -1,17 +1,27 @@
 import { MDXProvider } from '@mdx-js/react'
 import { createFileRoute } from '@tanstack/react-router'
-// import { ChevronRight } from "lucide-react"
+import TocComponent from '@/components/TocComponent'
+import { TocItem } from "@/types/toc-item"
+
+interface BlogPostData {
+  Post: React.ComponentType
+  ToC: TocItem[]
+}
 
 export const Route = createFileRoute('/blog/$id')({
   loader: async ({ params }) => {
     const module = await import(`@/mdxdocs/blogs/${params.id}/index.mdx`)
-    return module.default
+    const toc = await import(`@/mdxdocs/blogs/${params.id}/toc.json`);
+    return {
+      Post: module.default,
+      ToC: toc.default,
+    };
   },
   component: BlogPost,
 })
 
 function BlogPost() {
-  const Post = Route.useLoaderData<React.ComponentType>()
+  const { Post, ToC } = Route.useLoaderData<BlogPostData>()
   return (
     <>
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
@@ -23,18 +33,7 @@ function BlogPost() {
           </article>
         </div>
         <div className="space-y-8 border lg:sticky lg:top-4 lg:self-start">
-          <h3 className="mb-4 text-lg font-semibold">Contents</h3>
-          <ul className="space-y-4">
-            <li>
-              <a href="#section-1">Section 1</a>
-            </li>
-            <li>
-              <a href="#section-2">Section 2</a>
-            </li>
-            <li>
-              <a href="#section-3">Section 3</a>
-            </li>
-          </ul>
+          <TocComponent toc={ToC} />
         </div>
       </div>
     </>
