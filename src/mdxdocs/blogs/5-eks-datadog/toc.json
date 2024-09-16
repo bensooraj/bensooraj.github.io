@@ -1,0 +1,37 @@
+[
+  {
+    "content": "Pre-requisites",
+    "slug": "pre-requisites",
+    "lvl": 2,
+    "i": 0,
+    "seen": 0
+  },
+  {
+    "content": "Deploy the application",
+    "slug": "deploy-the-application",
+    "lvl": 2,
+    "i": 1,
+    "seen": 0
+  },
+  {
+    "content": "Deploy the Datadog agent",
+    "slug": "deploy-the-datadog-agent",
+    "lvl": 2,
+    "i": 2,
+    "seen": 0
+  },
+  {
+    "content": "O Logs! Where art thou?",
+    "slug": "o-logs-where-art-thou",
+    "lvl": 2,
+    "i": 3,
+    "seen": 0
+  },
+  {
+    "content": "Resources",
+    "slug": "resources",
+    "lvl": 2,
+    "i": 4,
+    "seen": 0
+  }
+]
