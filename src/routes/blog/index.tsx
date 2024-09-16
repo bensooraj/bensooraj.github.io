@@ -31,6 +31,11 @@ function getDateString(date: Date): string {
 
 function BlogPosts() {
     const metadata = Route.useLoaderData<BlogPostMetadata[]>();
+    const sortedMetadata = metadata.sort((a, b) => {
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
+        return dateB.getTime() - dateA.getTime();
+    });
     return (
         <>
             <main className="container px-4 py-6 mx-auto">
@@ -39,7 +44,7 @@ function BlogPosts() {
                     {/*  */}
                 </div>
                 <div className="space-y-1">
-                    {metadata.map((meta) => (
+                    {sortedMetadata.map((meta) => (
                         <div key={meta.slug} className="flex items-center transition-colors rounded-lg hover:bg-accent">
                             <div className="flex items-center w-40 p-4 text-sm text-muted-foreground whitespace-nowrap">
                                 <Calendar className="w-3 h-3 mr-1" />
