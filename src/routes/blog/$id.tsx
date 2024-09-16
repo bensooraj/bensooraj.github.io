@@ -1,5 +1,5 @@
 import { MDXProvider } from '@mdx-js/react'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import TocComponent from '@/components/TocComponent'
 import { TocItem } from "@/types/toc-item"
 import { Calendar } from 'lucide-react'
@@ -50,7 +50,9 @@ function BlogPost() {
             </div>
             <div className="flex flex-wrap gap-2 mb-8">
               {Metadata.tags.map((tag) => (
-                <Badge key={tag} variant="default">{tag}</Badge>
+                <Link key={tag} to="/blog/tags/$id" params={{ id: tag }}>
+                  <Badge>{tag}</Badge>
+                </Link>
               ))}
             </div>
             <MDXProvider>

@@ -16,7 +16,7 @@ function Eden(): Plugin {
             // 1. Number of posts per tag
             const postsPerTag = new Map<string, number>();
             // 2. Posts by tags
-            const postsByTags = new Map<string, BlogPostMetadata[]>();
+            const postsByTag = new Map<string, BlogPostMetadata[]>();
 
             files.forEach(filePath => {
                 const markdownWithMetadata = fs.readFileSync(
@@ -36,9 +36,9 @@ function Eden(): Plugin {
                 })
                 // Set posts by tags
                 data.tags?.forEach(tag => {
-                    const tagPosts = postsByTags.get(tag) || [];
+                    const tagPosts = postsByTag.get(tag) || [];
                     tagPosts.push({ ...data, slug });
-                    postsByTags.set(tag, tagPosts);
+                    postsByTag.set(tag, tagPosts);
                 })
 
                 const metadataFilePath = path.join(path.dirname(filePath), 'metadata.json');
@@ -47,8 +47,8 @@ function Eden(): Plugin {
             })
             console.log('postsPerTag:', postsPerTag);
             fs.writeFileSync(path.join(process.cwd(), 'src', 'mdxdocs', 'blogs', 'postsPerTag.json'), JSON.stringify([...postsPerTag], null, 2), 'utf-8');
-            console.log('postsByTags:', postsByTags);
-            fs.writeFileSync(path.join(process.cwd(), 'src', 'mdxdocs', 'blogs', 'postsByTags.json'), JSON.stringify([...postsByTags], null, 2), 'utf-8');
+            console.log('postsByTag:', postsByTag);
+            fs.writeFileSync(path.join(process.cwd(), 'src', 'mdxdocs', 'blogs', 'postsByTag.json'), JSON.stringify([...postsByTag], null, 2), 'utf-8');
         },
     };
 }
