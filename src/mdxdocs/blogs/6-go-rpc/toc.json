@@ -1,0 +1,65 @@
+[
+  {
+    "content": "Introduction",
+    "slug": "introduction",
+    "lvl": 2,
+    "i": 0,
+    "seen": 0
+  },
+  {
+    "content": "Prerequisites",
+    "slug": "prerequisites",
+    "lvl": 2,
+    "i": 1,
+    "seen": 0
+  },
+  {
+    "content": "Implementation",
+    "slug": "implementation",
+    "lvl": 2,
+    "i": 2,
+    "seen": 0
+  },
+  {
+    "content": "a. Types",
+    "slug": "a-types",
+    "lvl": 3,
+    "i": 3,
+    "seen": 0
+  },
+  {
+    "content": "b. Methods",
+    "slug": "b-methods",
+    "lvl": 3,
+    "i": 4,
+    "seen": 0
+  },
+  {
+    "content": "c. Server",
+    "slug": "c-server",
+    "lvl": 3,
+    "i": 5,
+    "seen": 0
+  },
+  {
+    "content": "d. Client",
+    "slug": "d-client",
+    "lvl": 3,
+    "i": 6,
+    "seen": 0
+  },
+  {
+    "content": "Some thoughts",
+    "slug": "some-thoughts",
+    "lvl": 2,
+    "i": 7,
+    "seen": 0
+  },
+  {
+    "content": "Resources",
+    "slug": "resources",
+    "lvl": 2,
+    "i": 8,
+    "seen": 0
+  }
+]
