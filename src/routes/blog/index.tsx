@@ -9,7 +9,6 @@ export const Route = createFileRoute('/blog/')({
     loader: async () => {
         // VITE specific code
         const metaModules = import.meta.glob<{ default: BlogPostMetadata }>(`@/mdxdocs/blogs/*/metadata.json`, { eager: true });
-        // const metaModules = await import.meta.glob(`@/mdxdocs/blogs/*/metadata.json`, {eager: true});
         const metadata: BlogPostMetadata[] = [];
         for (const path in metaModules) {
             const meta = await metaModules[path]
@@ -24,7 +23,7 @@ function getDateString(date: Date): string {
     const publishedDate = new Date(date)
     const publishedDateOptions: Intl.DateTimeFormatOptions = {
         year: 'numeric',
-        month: 'long',
+        month: 'short',
         day: '2-digit',
     }
     return publishedDate.toLocaleDateString(undefined, publishedDateOptions)
@@ -42,7 +41,7 @@ function BlogPosts() {
                 <div className="space-y-1">
                     {metadata.map((meta) => (
                         <div key={meta.slug} className="flex items-center transition-colors rounded-lg hover:bg-accent">
-                            <div className="flex items-center w-48 p-4 text-sm text-muted-foreground whitespace-nowrap">
+                            <div className="flex items-center w-40 p-4 text-sm text-muted-foreground whitespace-nowrap">
                                 <Calendar className="w-3 h-3 mr-1" />
                                 <span>{getDateString(meta.date)}</span>
                             </div>
