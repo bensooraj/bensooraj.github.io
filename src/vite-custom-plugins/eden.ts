@@ -18,10 +18,15 @@ function Eden(): Plugin {
                     'utf-8'
                 );
 
+                const slug = path.parse(filePath).dir.split(path.sep).at(-1)
+                if (!slug) {
+                    throw new Error(`Slug not found for file: ${filePath}`);
+                }
+
                 const { data } = matter(markdownWithMetadata);
 
                 const metadataFilePath = path.join(path.dirname(filePath), 'metadata.json');
-                fs.writeFileSync(metadataFilePath, JSON.stringify(data, null, 2), 'utf-8');
+                fs.writeFileSync(metadataFilePath, JSON.stringify({ slug, ...data }, null, 2), 'utf-8');
                 console.log(`toc.json written to ${metadataFilePath}`);
             })
 

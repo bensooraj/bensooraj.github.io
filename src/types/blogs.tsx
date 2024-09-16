@@ -2,6 +2,7 @@ import * as z from "zod";
 
 
 export const BlogPostMetadataSchema = z.object({
+    "slug": z.string(),
     "title": z.string(),
     "date": z.coerce.date(),
     "draft": z.boolean(),

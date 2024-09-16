@@ -1,4 +1,5 @@
 {
+  "slug": "3-go-struct-aggregation-and-embedding",
   "title": "Struct aggregation and embedding in golang",
   "date": "2020-08-03T02:04:32+05:30",
   "tags": [
