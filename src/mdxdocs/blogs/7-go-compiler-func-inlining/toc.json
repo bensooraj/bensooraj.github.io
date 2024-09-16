@@ -1,0 +1,44 @@
+[
+  {
+    "content": "What is Inlining?",
+    "slug": "what-is-inlining",
+    "lvl": 2,
+    "i": 0,
+    "seen": 0
+  },
+  {
+    "content": "Why inline?",
+    "slug": "why-inline",
+    "lvl": 2,
+    "i": 1,
+    "seen": 0
+  },
+  {
+    "content": "Improves performance by minimising the function call overheads",
+    "slug": "improves-performance-by-minimising-the-function-call-overheads",
+    "lvl": 3,
+    "i": 2,
+    "seen": 0
+  },
+  {
+    "content": "Augments escape analysis",
+    "slug": "augments-escape-analysis",
+    "lvl": 3,
+    "i": 3,
+    "seen": 0
+  },
+  {
+    "content": "How does the compiler do that?",
+    "slug": "how-does-the-compiler-do-that",
+    "lvl": 2,
+    "i": 4,
+    "seen": 0
+  },
+  {
+    "content": "Resources",
+    "slug": "resources",
+    "lvl": 2,
+    "i": 5,
+    "seen": 0
+  }
+]
