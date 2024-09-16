@@ -1,0 +1,72 @@
+[
+  {
+    "content": "Note",
+    "slug": "note",
+    "lvl": 2,
+    "i": 0,
+    "seen": 0
+  },
+  {
+    "content": "Steps",
+    "slug": "steps",
+    "lvl": 2,
+    "i": 1,
+    "seen": 0
+  },
+  {
+    "content": "mkcert",
+    "slug": "mkcert",
+    "lvl": 3,
+    "i": 2,
+    "seen": 0
+  },
+  {
+    "content": "Configure DNS",
+    "slug": "configure-dns",
+    "lvl": 3,
+    "i": 3,
+    "seen": 0
+  },
+  {
+    "content": "1. Modify `/etc/hosts`",
+    "slug": "1-modify-etchosts",
+    "lvl": 4,
+    "i": 4,
+    "seen": 0
+  },
+  {
+    "content": "2. Install, configure and start the `dnsmasq`server",
+    "slug": "2-install-configure-and-start-the-dnsmasqserver",
+    "lvl": 4,
+    "i": 5,
+    "seen": 0
+  },
+  {
+    "content": "3. Configure `resolv.conf`",
+    "slug": "3-configure-resolvconf",
+    "lvl": 4,
+    "i": 6,
+    "seen": 0
+  },
+  {
+    "content": "Verify",
+    "slug": "verify",
+    "lvl": 3,
+    "i": 7,
+    "seen": 0
+  },
+  {
+    "content": "Docker and Nginx",
+    "slug": "docker-and-nginx",
+    "lvl": 2,
+    "i": 8,
+    "seen": 0
+  },
+  {
+    "content": "Resources",
+    "slug": "resources",
+    "lvl": 2,
+    "i": 9,
+    "seen": 0
+  }
+]
