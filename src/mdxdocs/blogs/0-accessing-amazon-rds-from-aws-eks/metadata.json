@@ -1,0 +1,9 @@
+{
+  "slug": "0-accessing-amazon-rds-from-aws-eks",
+  "title": "Accessing Amazon RDS From AWS EKS",
+  "date": "2019-10-03T07:00:32+05:30",
+  "tags": [
+    "kubernetes",
+    "aws"
+  ]
+}
