@@ -2,6 +2,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { BlogPostMetadata } from '@/types/blogs'
 import { Calendar } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
+import { Badge } from '@/components/ui/badge'
 
 export const Route = createFileRoute('/blog/tags/$id')({
     loader: async ({ params }) => {
@@ -43,7 +44,7 @@ function BlogPostsByTag() {
         <>
         <main className="container px-4 py-6 mx-auto">
             <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold">tag: {tag}</h2>
+                <h2 className="p-4 text-2xl font-bold">tag: <Badge className='text-lg'>{tag}</Badge></h2>
                 {/*  */}
             </div>
             <div className="space-y-1">
