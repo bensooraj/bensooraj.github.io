@@ -1,0 +1,26 @@
+[
+  [
+    "docker",
+    1
+  ],
+  [
+    "nginx",
+    1
+  ],
+  [
+    "golang",
+    4
+  ],
+  [
+    "architecture",
+    1
+  ],
+  [
+    "kubernetes",
+    2
+  ],
+  [
+    "aws",
+    2
+  ]
+]

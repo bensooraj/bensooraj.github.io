@@ -1,0 +1,132 @@
+[
+  [
+    "docker",
+    [
+      {
+        "title": "Custom Local Domain over HTTPS",
+        "date": "2024-02-17T14:36:00+05:30",
+        "draft": false,
+        "tags": [
+          "docker",
+          "nginx"
+        ],
+        "slug": "8-custom-local-domain-over-https"
+      }
+    ]
+  ],
+  [
+    "nginx",
+    [
+      {
+        "title": "Custom Local Domain over HTTPS",
+        "date": "2024-02-17T14:36:00+05:30",
+        "draft": false,
+        "tags": [
+          "docker",
+          "nginx"
+        ],
+        "slug": "8-custom-local-domain-over-https"
+      }
+    ]
+  ],
+  [
+    "golang",
+    [
+      {
+        "title": "Function Inlining in Golang",
+        "date": "2023-09-18T10:00:00+05:30",
+        "draft": false,
+        "tags": [
+          "golang"
+        ],
+        "slug": "7-go-compiler-func-inlining"
+      },
+      {
+        "title": "Go RPCs (Remote Procedure Calls)",
+        "date": "2021-05-28T11:04:32+05:30",
+        "draft": false,
+        "tags": [
+          "golang"
+        ],
+        "slug": "6-go-rpc"
+      },
+      {
+        "title": "The empty interface and the empty struct in golang",
+        "date": "2020-09-01T17:04:32+05:30",
+        "draft": false,
+        "tags": [
+          "golang"
+        ],
+        "slug": "4-empty-interface-and-struct"
+      },
+      {
+        "title": "Struct aggregation and embedding in golang",
+        "date": "2020-08-03T02:04:32+05:30",
+        "tags": [
+          "golang"
+        ],
+        "slug": "3-go-struct-aggregation-and-embedding"
+      }
+    ]
+  ],
+  [
+    "architecture",
+    [
+      {
+        "title": "Sending application logs from EKS to Datadog",
+        "date": "2020-08-10T17:04:32+05:30",
+        "draft": false,
+        "tags": [
+          "architecture"
+        ],
+        "slug": "5-eks-datadog"
+      }
+    ]
+  ],
+  [
+    "kubernetes",
+    [
+      {
+        "title": "Up And Running With Kafka On AWS EKS Using Strimzi",
+        "date": "2019-10-09T09:00:32+05:30",
+        "tags": [
+          "kubernetes",
+          "aws"
+        ],
+        "slug": "2-up-and-running-with-kafka-on-aws-eks-using-strimzi"
+      },
+      {
+        "title": "Accessing Amazon RDS From AWS EKS",
+        "date": "2019-10-03T07:00:32+05:30",
+        "tags": [
+          "kubernetes",
+          "aws"
+        ],
+        "slug": "0-accessing-amazon-rds-from-aws-eks"
+      }
+    ]
+  ],
+  [
+    "aws",
+    [
+      {
+        "title": "Up And Running With Kafka On AWS EKS Using Strimzi",
+        "date": "2019-10-09T09:00:32+05:30",
+        "tags": [
+          "kubernetes",
+          "aws"
+        ],
+        "slug": "2-up-and-running-with-kafka-on-aws-eks-using-strimzi"
+      },
+      {
+        "title": "Accessing Amazon RDS From AWS EKS",
+        "date": "2019-10-03T07:00:32+05:30",
+        "tags": [
+          "kubernetes",
+          "aws"
+        ],
+        "slug": "0-accessing-amazon-rds-from-aws-eks"
+      }
+    ]
+  ]
+]

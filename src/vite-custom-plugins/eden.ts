@@ -36,9 +36,9 @@ function Eden(): Plugin {
                 })
                 // Set posts by tags
                 data.tags?.forEach(tag => {
-                    const posts = postsByTags.get(tag) || [];
-                    posts.push({ ...data, slug });
-                    postsByTags.set(tag, posts);
+                    const tagPosts = postsByTags.get(tag) || [];
+                    tagPosts.push({ ...data, slug });
+                    postsByTags.set(tag, tagPosts);
                 })
 
                 const metadataFilePath = path.join(path.dirname(filePath), 'metadata.json');
@@ -46,6 +46,9 @@ function Eden(): Plugin {
                 console.log(`toc.json written to ${metadataFilePath}`);
             })
             console.log('postsPerTag:', postsPerTag);
+            fs.writeFileSync(path.join(process.cwd(), 'src', 'mdxdocs', 'blogs', 'postsPerTag.json'), JSON.stringify([...postsPerTag], null, 2), 'utf-8');
+            console.log('postsByTags:', postsByTags);
+            fs.writeFileSync(path.join(process.cwd(), 'src', 'mdxdocs', 'blogs', 'postsByTags.json'), JSON.stringify([...postsByTags], null, 2), 'utf-8');
         },
     };
 }
