@@ -6,6 +6,7 @@ import mdx from '@mdx-js/rollup'
 
 // Custom plugins
 import { Galilee } from './src/vite-custom-plugins/galilee'
+import { Eden } from './src/vite-custom-plugins/eden'
 
 // Remark plugins
 import remarkFrontmatter from 'remark-frontmatter'
@@ -18,6 +19,7 @@ export default defineConfig({
   plugins: [
     TanStackRouterVite(),
     Galilee(),
+    Eden(),
     {
       enforce: 'pre',
       ...mdx({
