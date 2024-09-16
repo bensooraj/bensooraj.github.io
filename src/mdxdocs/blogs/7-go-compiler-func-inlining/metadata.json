@@ -1,9 +1,9 @@
 {
-  "slug": "7-go-compiler-func-inlining",
   "title": "Function Inlining in Golang",
   "date": "2023-09-18T10:00:00+05:30",
   "draft": false,
   "tags": [
     "golang"
-  ]
+  ],
+  "slug": "7-go-compiler-func-inlining"
 }

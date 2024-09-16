@@ -1,9 +1,9 @@
 {
-  "slug": "5-eks-datadog",
   "title": "Sending application logs from EKS to Datadog",
   "date": "2020-08-10T17:04:32+05:30",
   "draft": false,
   "tags": [
     "architecture"
-  ]
+  ],
+  "slug": "5-eks-datadog"
 }

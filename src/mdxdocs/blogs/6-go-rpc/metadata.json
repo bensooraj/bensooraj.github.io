@@ -1,9 +1,9 @@
 {
-  "slug": "6-go-rpc",
   "title": "Go RPCs (Remote Procedure Calls)",
   "date": "2021-05-28T11:04:32+05:30",
   "draft": false,
   "tags": [
     "golang"
-  ]
+  ],
+  "slug": "6-go-rpc"
 }

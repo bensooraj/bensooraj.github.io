@@ -1,9 +1,9 @@
 {
-  "slug": "2-up-and-running-with-kafka-on-aws-eks-using-strimzi",
   "title": "Up And Running With Kafka On AWS EKS Using Strimzi",
   "date": "2019-10-09T09:00:32+05:30",
   "tags": [
     "kubernetes",
     "aws"
-  ]
+  ],
+  "slug": "2-up-and-running-with-kafka-on-aws-eks-using-strimzi"
 }

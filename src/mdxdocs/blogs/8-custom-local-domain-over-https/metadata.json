@@ -1,10 +1,10 @@
 {
-  "slug": "8-custom-local-domain-over-https",
   "title": "Custom Local Domain over HTTPS",
   "date": "2024-02-17T14:36:00+05:30",
   "draft": false,
   "tags": [
     "docker",
     "nginx"
-  ]
+  ],
+  "slug": "8-custom-local-domain-over-https"
 }
