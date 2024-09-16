@@ -1,121 +1,114 @@
 [
   {
-    "content": "Accessing Amazon RDS From AWS EKS",
-    "slug": "accessing-amazon-rds-from-aws-eks",
-    "lvl": 1,
+    "content": "1. Premise",
+    "slug": "1-premise",
+    "lvl": 2,
     "i": 0,
     "seen": 0
   },
   {
-    "content": "Contents <a id=\"contents\"></a>",
-    "slug": "contents-",
+    "content": "2. Setup the MySQL Database (Amazon RDS)",
+    "slug": "2-setup-the-mysql-database-amazon-rds",
     "lvl": 2,
     "i": 1,
     "seen": 0
   },
   {
-    "content": "1. Premise <a id=\"premise\"></a>",
-    "slug": "1-premise-",
-    "lvl": 2,
+    "content": "2.1 Create the VPC",
+    "slug": "21-create-the-vpc",
+    "lvl": 3,
     "i": 2,
     "seen": 0
   },
   {
-    "content": "2. Setup the MySQL Database (Amazon RDS) <a id=\"setup-the-mysql-database\"></a>",
-    "slug": "2-setup-the-mysql-database-amazon-rds-",
-    "lvl": 2,
+    "content": "2.2 Create the subnets",
+    "slug": "22-create-the-subnets",
+    "lvl": 3,
     "i": 3,
     "seen": 0
   },
   {
-    "content": "2.1 Create the VPC <a id=\"rds-create-the-vpc\"></a>",
-    "slug": "21-create-the-vpc-",
+    "content": "2.3 Create DB Subnet Group",
+    "slug": "23-create-db-subnet-group",
     "lvl": 3,
     "i": 4,
     "seen": 0
   },
   {
-    "content": "2.2 Create the subnets <a id=\"rds-create-subnets\"></a>",
-    "slug": "22-create-the-subnets-",
+    "content": "2.4 Create a VPC Security Group",
+    "slug": "24-create-a-vpc-security-group",
     "lvl": 3,
     "i": 5,
     "seen": 0
   },
   {
-    "content": "2.3 Create DB Subnet Group <a id=\"rds-create-db-subnet-group\"></a>",
-    "slug": "23-create-db-subnet-group-",
+    "content": "2.5 Create a DB Instance in the VPC",
+    "slug": "25-create-a-db-instance-in-the-vpc",
     "lvl": 3,
     "i": 6,
     "seen": 0
   },
   {
-    "content": "2.4 Create a VPC Security Group <a id=\"rds-create-vpc-security-group\"></a>",
-    "slug": "24-create-a-vpc-security-group-",
+    "content": "2.6 Amazon RDS setup diagram",
+    "slug": "26-amazon-rds-setup-diagram",
     "lvl": 3,
     "i": 7,
     "seen": 0
   },
   {
-    "content": "2.5 Create a DB Instance in the VPC <a id=\"rds-create-db-instance-in-the-vpc\"></a>",
-    "slug": "25-create-a-db-instance-in-the-vpc-",
-    "lvl": 3,
+    "content": "3. Setup the EKS cluster",
+    "slug": "3-setup-the-eks-cluster",
+    "lvl": 2,
     "i": 8,
     "seen": 0
   },
   {
-    "content": "2.6 Amazon RDS setup diagram <a id=\"rds-setup-diagram\"></a>",
-    "slug": "26-amazon-rds-setup-diagram-",
-    "lvl": 3,
+    "content": "4. Let's build the bridge!",
+    "slug": "4-lets-build-the-bridge",
+    "lvl": 2,
     "i": 9,
     "seen": 0
   },
   {
-    "content": "3. Setup the EKS cluster <a id=\"setup-the-eks-cluster\"></a>",
-    "slug": "3-setup-the-eks-cluster-",
-    "lvl": 2,
+    "content": "4.1 Create and Accept a VPC Peering Connection",
+    "slug": "41-create-and-accept-a-vpc-peering-connection",
+    "lvl": 3,
     "i": 10,
     "seen": 0
   },
   {
-    "content": "4. Let's build the bridge! <a id=\"lets-build-the-bridge\"></a>",
-    "slug": "4-lets-build-the-bridge-",
-    "lvl": 2,
+    "content": "4.2 Update the EKS cluster VPC's route table",
+    "slug": "42-update-the-eks-cluster-vpcs-route-table",
+    "lvl": 3,
     "i": 11,
     "seen": 0
   },
   {
-    "content": "4.1 Create and Accept a VPC Peering Connection <a id=\"create-and-accept-vpc-peering-connections\"></a>",
-    "slug": "41-create-and-accept-a-vpc-peering-connection-",
+    "content": "4.3 Update the RDS VPC's route table",
+    "slug": "43-update-the-rds-vpcs-route-table",
     "lvl": 3,
     "i": 12,
     "seen": 0
   },
   {
-    "content": "4.2 Update the EKS cluster VPC's route table <a id=\"update-eks-cluster-vpc-route-table\"></a>",
-    "slug": "42-update-the-eks-cluster-vpcs-route-table-",
+    "content": "4.4 Update the RDS instance's security group",
+    "slug": "44-update-the-rds-instances-security-group",
     "lvl": 3,
     "i": 13,
     "seen": 0
   },
   {
-    "content": "4.3 Update the RDS VPC's route table <a id=\"update-rds-vpc-route-table\"></a>",
-    "slug": "43-update-the-rds-vpcs-route-table-",
-    "lvl": 3,
+    "content": "5. Test the connection",
+    "slug": "5-test-the-connection",
+    "lvl": 2,
     "i": 14,
     "seen": 0
   },
   {
-    "content": "4.4 Update the RDS instance's security group <a id=\"update-rds-instance-security-group\"></a>",
-    "slug": "44-update-the-rds-instances-security-group-",
-    "lvl": 3,
-    "i": 15,
-    "seen": 0
-  },
-  {
-    "content": "5. Test the connection <a id=\"test-the-connection\"></a>",
-    "slug": "5-test-the-connection-",
+    "content": "6. Resources",
+    "slug": "6-resources",
     "lvl": 2,
-    "i": 16,
+    "i": 15,
     "seen": 0
   }
 ]

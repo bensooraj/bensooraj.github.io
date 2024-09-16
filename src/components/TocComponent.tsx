@@ -41,7 +41,7 @@ export default function TocComponent({ toc }: { toc: TocItem[] }) {
                         className={`hover:text-primary transition-colors ${lvlMarginLeft[item.lvl]}`}
                     >
                         <a href={`#${item.slug}`} className="flex items-center">
-                            <ChevronRight className="flex-shrink-0 w-4 h-4 mr-2" />
+                            <ChevronRight className="self-start flex-shrink-0 w-4 h-4 mt-1 mr-2" />
                             <span className="block">{item.content}</span>
                         </a>
                     </li>
