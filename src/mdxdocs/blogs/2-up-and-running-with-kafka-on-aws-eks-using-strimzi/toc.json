@@ -1,0 +1,72 @@
+[
+  {
+    "content": "Configure the AWS CLI",
+    "slug": "configure-the-aws-cli",
+    "lvl": 2,
+    "i": 0,
+    "seen": 0
+  },
+  {
+    "content": "Create the EKS cluster",
+    "slug": "create-the-eks-cluster",
+    "lvl": 2,
+    "i": 1,
+    "seen": 0
+  },
+  {
+    "content": "Enter Kubernetes",
+    "slug": "enter-kubernetes",
+    "lvl": 2,
+    "i": 2,
+    "seen": 0
+  },
+  {
+    "content": "Install and configure Helm",
+    "slug": "install-and-configure-helm",
+    "lvl": 2,
+    "i": 3,
+    "seen": 0
+  },
+  {
+    "content": "Install the Strimzi Kafka Operator",
+    "slug": "install-the-strimzi-kafka-operator",
+    "lvl": 2,
+    "i": 4,
+    "seen": 0
+  },
+  {
+    "content": "Deploying the Kafka cluster",
+    "slug": "deploying-the-kafka-cluster",
+    "lvl": 2,
+    "i": 5,
+    "seen": 0
+  },
+  {
+    "content": "Analysis",
+    "slug": "analysis",
+    "lvl": 2,
+    "i": 6,
+    "seen": 0
+  },
+  {
+    "content": "Create topics",
+    "slug": "create-topics",
+    "lvl": 2,
+    "i": 7,
+    "seen": 0
+  },
+  {
+    "content": "Test the Kafka cluster with Node.js clients",
+    "slug": "test-the-kafka-cluster-with-nodejs-clients",
+    "lvl": 2,
+    "i": 8,
+    "seen": 0
+  },
+  {
+    "content": "Clean Up!",
+    "slug": "clean-up",
+    "lvl": 2,
+    "i": 9,
+    "seen": 0
+  }
+]
