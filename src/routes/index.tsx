@@ -1,14 +1,20 @@
-import { createLazyFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from '@/components/ui/button'
 import { Calendar } from "lucide-react"
 import { SiX, SiGithub, SiLinkedin } from '@icons-pack/react-simple-icons'
+import { Badge } from '@/components/ui/badge'
 
-export const Route = createLazyFileRoute('/')({
+export const Route = createFileRoute('/')({
+  loader: async () => {
+    const postsPerTag = (await import(`@/mdxdocs/blogs/postsPerTag.json`)).default as [string, number][]
+    return postsPerTag || []
+  },
   component: HomePage
 })
 
 function HomePage() {
+  const postsPerTag = Route.useLoaderData<[string, number][]>()
   return (
     <>
       <main className="container px-4 py-8 mx-auto">
@@ -60,17 +66,20 @@ function HomePage() {
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>Categories</CardTitle>
+                <CardTitle>Tags</CardTitle>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2">
-                  <li>
-                    <Link className="hover:underline" to="/">Tech (5)</Link>
-                  </li>
-                  <li>
-                    <Link className="hover:underline" to="/">Thoughts (3)</Link>
-                  </li>
-                </ul>
+                <div className="flex flex-wrap gap-2">
+                  {postsPerTag.map(([tag, count]) => (
+                    <Badge>
+                      <Link className="hover:font-bold" to="/blog/tags/$id" params={{ id: tag }}>
+                        {tag} <span>({count})</span>
+                      </Link>
+                    </Badge>
+                  ))}
+
+                </div>
+
               </CardContent>
             </Card>
             <Card>
