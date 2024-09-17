@@ -1,8 +1,8 @@
 import { createLazyFileRoute, Link } from '@tanstack/react-router'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from '@/components/ui/button'
-import { Calendar, Rss } from "lucide-react"
-import { SiX, SiGithub } from '@icons-pack/react-simple-icons'
+import { Calendar } from "lucide-react"
+import { SiX, SiGithub, SiLinkedin } from '@icons-pack/react-simple-icons'
 
 export const Route = createLazyFileRoute('/')({
   component: HomePage
@@ -11,15 +11,15 @@ export const Route = createLazyFileRoute('/')({
 function HomePage() {
   return (
     <>
-      <main className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="md:col-span-2 space-y-8">
+      <main className="container px-4 py-8 mx-auto">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+          <div className="space-y-8 md:col-span-2">
             <Card>
               <CardHeader>
                 <CardTitle>New features</CardTitle>
                 <CardDescription>
                   <div className="flex items-center space-x-2">
-                    <Calendar className="h-4 w-4" />
+                    <Calendar className="w-4 h-4" />
                     <span>24th March 2024</span>
                   </div>
                 </CardDescription>
@@ -36,7 +36,7 @@ function HomePage() {
                 <CardTitle>Pictures display</CardTitle>
                 <CardDescription>
                   <div className="flex items-center space-x-2">
-                    <Calendar className="h-4 w-4" />
+                    <Calendar className="w-4 h-4" />
                     <span>21st March 2024</span>
                   </div>
                 </CardDescription>
@@ -79,15 +79,15 @@ function HomePage() {
               </CardHeader>
               <CardContent>
                 <div className="flex space-x-4">
-                  <Link to="/">
-                    <SiX className="h-6 w-6" color='default' size={24} />
-                  </Link>
-                  <Link to="/">
-                    <SiGithub className="h-6 w-6" color='default' size={24} />
-                  </Link>
-                  <Link to="/">
-                    <Rss className="h-6 w-6" />
-                  </Link>
+                  <a href="https://x.com/bensooraj" target="_blank" rel="noopener noreferrer">
+                    <SiX className="w-6 h-6" color='default' size={24} />
+                  </a>
+                  <a href="https://github.com/bensooraj" target="_blank" rel="noopener noreferrer">
+                    <SiGithub className="w-6 h-6" color='default' size={24} />
+                  </a>
+                  <a href="https://in.linkedin.com/in/bensoorajm" target="_blank" rel="noopener noreferrer">
+                    <SiLinkedin className="w-6 h-6" />
+                  </a>
                 </div>
               </CardContent>
             </Card>
