@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from '@/components/ui/button'
-import { Calendar } from "lucide-react"
+import { Calendar, LucideNotepadText } from "lucide-react"
 import { SiX, SiGithub, SiLinkedin } from '@icons-pack/react-simple-icons'
 import { Badge } from '@/components/ui/badge'
 
@@ -58,10 +58,12 @@ function HomePage() {
           <div className="space-y-8">
             <Card>
               <CardHeader>
-                <CardTitle>About Me</CardTitle>
+                <CardTitle className='flex gap-2'><LucideNotepadText className='w-4 h-4' /> About Me</CardTitle>
               </CardHeader>
               <CardContent>
-                <p>A brief description about yourself and your blog.</p>
+                <p>Hi! I'm Ben, a software engineer, a husband, a father, and a voracious learner.</p>
+                <br />
+                <p>You'll find me jotting down my notes on what I am currently learning and working on.</p>
               </CardContent>
             </Card>
             <Card>
