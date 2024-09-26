@@ -1,9 +1,17 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from '@/components/ui/button'
-import { Calendar, LucideNotepadText } from "lucide-react"
+import {
+  Card, CardContent,
+  // CardDescription, 
+  CardHeader, CardTitle
+} from "@/components/ui/card"
+// import { Button } from '@/components/ui/button'
+import {
+  // Calendar,
+  LucideNotepadText
+} from "lucide-react"
 import { SiX, SiGithub, SiLinkedin } from '@icons-pack/react-simple-icons'
 import { Badge } from '@/components/ui/badge'
+import MDImage from '@/components/MDImage';
 
 export const Route = createFileRoute('/')({
   loader: async () => {
@@ -20,7 +28,7 @@ function HomePage() {
       <main className="container px-4 py-8 mx-auto">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           <div className="space-y-8 md:col-span-2">
-            <Card>
+            {/* <Card>
               <CardHeader>
                 <CardTitle>New features</CardTitle>
                 <CardDescription>
@@ -36,23 +44,26 @@ function HomePage() {
               <CardFooter>
                 <Button variant="outline">Read more</Button>
               </CardFooter>
-            </Card>
+            </Card> */}
             <Card>
+              {/* Software Engineering */}
               <CardHeader>
-                <CardTitle>Pictures display</CardTitle>
-                <CardDescription>
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="w-4 h-4" />
-                    <span>21st March 2024</span>
-                  </div>
-                </CardDescription>
+                <CardTitle>My thoughts on</CardTitle>
               </CardHeader>
               <CardContent>
-                <p>Showcase your favorite images in more ways than one!</p>
+                <p>software engineering (a funny take)</p>
+                <MDImage src="/home/dilbert-scott-adams.webp" alt="dilbert by Scott Adams" />
               </CardContent>
-              <CardFooter>
-                <Button variant="outline">Read more</Button>
-              </CardFooter>
+              {/* Life */}
+              <CardContent>
+                <p>life... and</p>
+                <MDImage src="/home/calvin-and-hobbes-6-1.png" alt="Calvin and Hobbes | Photo Credit - Bill Watterson and Universal Press Syndicate" />
+              </CardContent>
+              {/* Everythin in between */}
+              <CardContent>
+                <p>everythin in between</p>
+                <MDImage src="/home/calvin-and-hobbes-6-1.png" alt="Calvin and Hobbes | Photo Credit - Bill Watterson and Universal Press Syndicate" />
+              </CardContent>
             </Card>
           </div>
           <div className="space-y-8">
