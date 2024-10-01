@@ -51,4 +51,4 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
         with:
-          branch: v2-gh-pages
+          branch: v3-gh-pages
