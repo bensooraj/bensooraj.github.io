@@ -3,7 +3,7 @@ import path from 'path';
 import { glob } from 'glob'
 import { Plugin } from 'vite'
 import matter from 'gray-matter';
-import { BlogPostMetadata } from '@/types/blogs'
+import { BlogPostMetadata } from '../types/blogs';
 
 function Eden(): Plugin {
     return {
@@ -31,11 +31,11 @@ function Eden(): Plugin {
 
                 const { data }: { data: BlogPostMetadata } = matter(markdownWithMetadata);
                 // Set tags count
-                data.tags?.forEach(tag => {
+                data.tags?.forEach((tag: string) => {
                     postsPerTag.set(tag, (postsPerTag.get(tag) || 0) + 1);
                 })
                 // Set posts by tags
-                data.tags?.forEach(tag => {
+                data.tags?.forEach((tag: string) => {
                     const tagPosts = postsByTag.get(tag) || [];
                     tagPosts.push({ ...data, slug });
                     postsByTag.set(tag, tagPosts);

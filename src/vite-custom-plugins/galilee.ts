@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { glob } from 'glob'
 import { Plugin } from 'vite'
+// @ts-ignore
 import toc from 'markdown-toc'
 
 function Galilee(): Plugin {
