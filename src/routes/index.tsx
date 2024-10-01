@@ -51,18 +51,23 @@ function HomePage() {
                 <CardTitle>My thoughts on</CardTitle>
               </CardHeader>
               <CardContent>
-                <p>software engineering (a funny take)</p>
+                <p>software engineering (a funny take),</p>
                 <MDImage src="/home/dilbert-scott-adams.webp" alt="dilbert by Scott Adams" />
               </CardContent>
               {/* Life */}
               <CardContent>
-                <p>life... and</p>
+                <p>life </p>
                 <MDImage src="/home/calvin-and-hobbes-6-1.png" alt="Calvin and Hobbes | Photo Credit - Bill Watterson and Universal Press Syndicate" />
               </CardContent>
               {/* Everythin in between */}
               <CardContent>
-                <p>everythin in between</p>
-                <MDImage src="/home/calvin-and-hobbes-6-1.png" alt="Calvin and Hobbes | Photo Credit - Bill Watterson and Universal Press Syndicate" />
+                <p>and everythin in between.</p>
+                <div className="p-6 rounded-lg bg-primary/10">
+                  <p className="mb-4 text-lg italic">
+                    <sup>18</sup> This is what I have observed to be good: that it is appropriate for a person to eat, to drink and to find satisfaction in their toilsome labor under the sun during the few days of life God has given them—for this is their lot. <sup>19</sup> Moreover, when God gives someone wealth and possessions, and the ability to enjoy them, to accept their lot and be happy in their toil—this is a gift of God. <sup>20</sup> They seldom reflect on the days of their life, because God keeps them occupied with gladness of heart.
+                  </p>
+                  <p className="font-semibold text-right">- Ecclesiastes 5:18-20</p>
+                </div>
               </CardContent>
             </Card>
           </div>
