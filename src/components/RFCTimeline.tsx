@@ -14,6 +14,7 @@ interface TimelineItem {
     rfcUrl: string,
     notesUrl?: string
     authors: string
+    timeGap?: string
 }
 
 const timelineItems: TimelineItem[] = [
@@ -26,6 +27,7 @@ const timelineItems: TimelineItem[] = [
         rfcUrl: "https://www.rfc-editor.org/info/rfc5849",
         authors: "Eran Hammer-Lahav",
         isRead: false,
+        timeGap: "2 years 6 months",
     },
     {
         icon: "box",
@@ -63,7 +65,7 @@ export default function RFCTimeline() {
                                 <div className="space-y-3 ml-14">
                                     <div className="flex items-center space-x-2">
                                         <h3 className="text-lg font-semibold">
-                                            {item.title} {/* {item.version} */}
+                                            {item.title}
                                         </h3>
                                         {item.isRead ? (
                                             <Badge variant="default" className="text-green-800 bg-green-100 rounded-full hover:bg-green-100 hover:text-green-800">
@@ -103,6 +105,11 @@ export default function RFCTimeline() {
                                         </Button>
                                     )}
                                 </div>
+                                {item.timeGap && (
+                                    <div className="absolute px-2 text-gray-500 transform -rotate-90 -translate-x-1/2 -translate-y-20 bg-white left-5 top-full">
+                                        {item.timeGap}
+                                    </div>
+                                )}
                             </div>
                         )
                     })}
