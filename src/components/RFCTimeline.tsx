@@ -37,7 +37,7 @@ const timelineItems: TimelineItem[] = [
         description: "The OAuth 2.0 authorization framework enables a third-party application to obtain limited access to an HTTP service, either on behalf of a resource owner by orchestrating an approval interaction between the resource owner and the HTTP service, or by allowing the third-party application to obtain access on its own behalf. This specification replaces and obsoletes the OAuth 1.0 protocol described in RFC 5849.",
         rfcNumber: 'RFC 6749',
         rfcUrl: "https://www.rfc-editor.org/info/rfc6749",
-        notesUrl: "https://www.rfc-editor.org/info/rfc5849",
+        notesUrl: "/identity/rfc-notes/rfc6749",
         authors: "Dick Hardt",
     },
 ]
@@ -98,7 +98,7 @@ export default function RFCTimeline() {
                                     )}
                                     {item.notesUrl && (
                                         <Button variant="outline" className="mt-2" asChild>
-                                            <Link to={item.notesUrl} target='_blank'>
+                                            <Link to={item.notesUrl}>
                                                 <Pencil className="w-4 h-4 mr-1" />
                                                 <span>Notes</span>
                                             </Link>

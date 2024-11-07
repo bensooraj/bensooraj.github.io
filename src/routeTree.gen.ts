@@ -24,6 +24,9 @@ const AboutLazyImport = createFileRoute('/about')()
 const IdentityRfcNotesIndexLazyImport = createFileRoute(
   '/identity/rfc-notes/',
 )()
+const IdentityRfcNotesRfc6749IndexLazyImport = createFileRoute(
+  '/identity/rfc-notes/rfc6749/',
+)()
 
 // Create/Update Routes
 
@@ -58,6 +61,16 @@ const BlogTagsIdRoute = BlogTagsIdImport.update({
   path: '/blog/tags/$id',
   getParentRoute: () => rootRoute,
 } as any)
+
+const IdentityRfcNotesRfc6749IndexLazyRoute =
+  IdentityRfcNotesRfc6749IndexLazyImport.update({
+    path: '/identity/rfc-notes/rfc6749/',
+    getParentRoute: () => rootRoute,
+  } as any).lazy(() =>
+    import('./routes/identity/rfc-notes/rfc6749/index.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 
 // Populate the FileRoutesByPath interface
 
@@ -105,6 +118,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IdentityRfcNotesIndexLazyImport
       parentRoute: typeof rootRoute
     }
+    '/identity/rfc-notes/rfc6749/': {
+      id: '/identity/rfc-notes/rfc6749/'
+      path: '/identity/rfc-notes/rfc6749'
+      fullPath: '/identity/rfc-notes/rfc6749'
+      preLoaderRoute: typeof IdentityRfcNotesRfc6749IndexLazyImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
@@ -117,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/blog': typeof BlogIndexRoute
   '/blog/tags/$id': typeof BlogTagsIdRoute
   '/identity/rfc-notes': typeof IdentityRfcNotesIndexLazyRoute
+  '/identity/rfc-notes/rfc6749': typeof IdentityRfcNotesRfc6749IndexLazyRoute
 }
 
 export interface FileRoutesByTo {
@@ -126,6 +147,7 @@ export interface FileRoutesByTo {
   '/blog': typeof BlogIndexRoute
   '/blog/tags/$id': typeof BlogTagsIdRoute
   '/identity/rfc-notes': typeof IdentityRfcNotesIndexLazyRoute
+  '/identity/rfc-notes/rfc6749': typeof IdentityRfcNotesRfc6749IndexLazyRoute
 }
 
 export interface FileRoutesById {
@@ -136,6 +158,7 @@ export interface FileRoutesById {
   '/blog/': typeof BlogIndexRoute
   '/blog/tags/$id': typeof BlogTagsIdRoute
   '/identity/rfc-notes/': typeof IdentityRfcNotesIndexLazyRoute
+  '/identity/rfc-notes/rfc6749/': typeof IdentityRfcNotesRfc6749IndexLazyRoute
 }
 
 export interface FileRouteTypes {
@@ -147,6 +170,7 @@ export interface FileRouteTypes {
     | '/blog'
     | '/blog/tags/$id'
     | '/identity/rfc-notes'
+    | '/identity/rfc-notes/rfc6749'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -155,6 +179,7 @@ export interface FileRouteTypes {
     | '/blog'
     | '/blog/tags/$id'
     | '/identity/rfc-notes'
+    | '/identity/rfc-notes/rfc6749'
   id:
     | '__root__'
     | '/'
@@ -163,6 +188,7 @@ export interface FileRouteTypes {
     | '/blog/'
     | '/blog/tags/$id'
     | '/identity/rfc-notes/'
+    | '/identity/rfc-notes/rfc6749/'
   fileRoutesById: FileRoutesById
 }
 
@@ -173,6 +199,7 @@ export interface RootRouteChildren {
   BlogIndexRoute: typeof BlogIndexRoute
   BlogTagsIdRoute: typeof BlogTagsIdRoute
   IdentityRfcNotesIndexLazyRoute: typeof IdentityRfcNotesIndexLazyRoute
+  IdentityRfcNotesRfc6749IndexLazyRoute: typeof IdentityRfcNotesRfc6749IndexLazyRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
@@ -182,6 +209,7 @@ const rootRouteChildren: RootRouteChildren = {
   BlogIndexRoute: BlogIndexRoute,
   BlogTagsIdRoute: BlogTagsIdRoute,
   IdentityRfcNotesIndexLazyRoute: IdentityRfcNotesIndexLazyRoute,
+  IdentityRfcNotesRfc6749IndexLazyRoute: IdentityRfcNotesRfc6749IndexLazyRoute,
 }
 
 export const routeTree = rootRoute
@@ -201,7 +229,8 @@ export const routeTree = rootRoute
         "/blog/$id",
         "/blog/",
         "/blog/tags/$id",
-        "/identity/rfc-notes/"
+        "/identity/rfc-notes/",
+        "/identity/rfc-notes/rfc6749/"
       ]
     },
     "/": {
@@ -221,6 +250,9 @@ export const routeTree = rootRoute
     },
     "/identity/rfc-notes/": {
       "filePath": "identity/rfc-notes/index.lazy.tsx"
+    },
+    "/identity/rfc-notes/rfc6749/": {
+      "filePath": "identity/rfc-notes/rfc6749/index.lazy.tsx"
     }
   }
 }
